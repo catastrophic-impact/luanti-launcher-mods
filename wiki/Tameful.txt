@@ -1,0 +1,117 @@
+================================================================
+TAMEFUL
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         tameful
+
+Tame (almost) any animal with a lead. Pets follow you, stay, relax at home, fight
+for you, carry you, and never die for good: a pet that is downed goes to your
+stable and comes back when it has recovered.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Taming
+- Right-click an animal with a lead and choose Yes in the popup. The lead is
+  used up (setting).
+- Animals you can already tame the usual way (wolves, cats, horses and so on)
+  join your pet list too.
+- Baby animals can't be tamed. Wait until they have grown up.
+- If you already have as many pets out as the max_summoned setting allows
+  (default 1), a newly tamed pet goes straight to the stable.
+- Skeleton horses and zombie horses can be tamed.
+- Not tameable: water creatures that cannot live on land.
+- A pet keeps its name tag blocked: rename it in the pet window instead.
+
+Recipes
+- 3 string in a diagonal = 1 lead.
+- Saddles can be made from rabbit hide or wool instead of leather, and with a
+  copper ingot instead of iron (same shape as the normal saddle).
+
+Controls
+- Right-click your pet with an empty hand: Follow / Stay. On animals you get on
+  when you right-click (horses and so on) hold sneak while right-clicking.
+- Right-click your pet with a stick: opens its pet window.
+- /tameful opens your pet list.
+
+Pet window
+- Picture, kind, health, mode and saddle.
+- Stats: speed, jump, attack and the sword it counts as, armor and its points,
+  crit chance.
+- Rename, Follow / Stay / Relax, Attitude, Wander and Range buttons, Ride,
+  Stable and Release.
+- Animals with an inventory (horses, donkeys, mules, llamas) get an Inventory
+  button.
+
+Stable and recovery
+- Stable puts a pet away; Resummon calls it back next to you.
+- A pet that would die is downed instead: it goes to the stable at full health
+  and can be called back after downed_seconds (default 30).
+- Pets that follow you are stabled when you log out or change dimension.
+  Pets that stay or relax are left where they are.
+- Release sets a pet free and gives its saddle and horse armor back to you.
+
+Modes and fighting
+- Follow: the pet walks with you. Every pet walks at the same speed (3.5
+  blocks/s wandering, about 7 following), whatever the animal.
+- Stay: the pet stays where it is.
+- Relax: the pet stays near a home spot and wanders (Wander 6 / 12 / 24 blocks).
+- Attitude: Passive never fights. Defensive fights whoever hurt it, you or
+  what you hit. Aggressive also attacks hostile mobs near you (never creepers)
+  within its Range (default 16). Pets never hunt other animals on their own.
+- Pets have their own health, attack and armor per species, and heal 1 health
+  every 2 seconds after 10 seconds without damage (setting).
+- Babies ignore pet parents.
+
+Riding
+- Ride from the pet window. Land pets can be ridden: the walking speed and
+  jump come from the species, a saddle adds 2 blocks/s on the animals that
+  take one (horse family, pig, strider).
+- Pets climb one-block steps while ridden. Sneak gets you off. You can ride
+  through water.
+- Flying pets (bats, parrots) can't be ridden yet.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/tameful          Open your pet list and the settings. (Everyone; settings only
+                  for the world owner or players with the server privilege.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Change them in the /tameful screen. Saved in the mod's storage in the world.
+
+consume_lead      on      The lead is used up when an animal is tamed.
+max_tames         10      Most pets per player (0 = no limit).
+max_summoned      1       Most pets out in the world at once (0 = no limit).
+downed_seconds    30      How long a downed pet recovers in the stable.
+immortal          on      Pets are downed instead of dying for good.
+follow_teleport   24      A following pet farther away than this is brought to you.
+show_name         on      Write the pet's name above it.
+show_health       off     Also show its health on its own line.
+show_owner        off     Also show its owner on its own line.
+regen_health      on      Pets heal over time.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Tameful" button in the HQ list runs /tameful.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Works with Mob Crate: a crated pet can still be stabled, and a stale copy
+  is removed if you release it after that.
+- Works with Conflict Resolution: other players can't hurt your pets by
+  default.
+- Pet data is saved with the animal and in the world, so it survives restarts.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

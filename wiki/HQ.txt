@@ -1,0 +1,66 @@
+================================================================
+HQ
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         hq
+
+One place for every mod screen: a list of buttons that open the other mods,
+your own command shortcuts, quick time and weather buttons, and small buttons
+in your inventory.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+HQ screen
+- A list of the mods that registered a shortcut. Each one has a star that puts
+  a mini button for it in your inventory.
+- Quick buttons, shown only if you have the privilege the command needs:
+  time (Day, Noon, Dusk, Night), weather (Clear, Rain, Thunder), game mode,
+  night vision and speed.
+- Your own shortcuts: add, edit, delete and run any command with a name. They
+  only work with the privileges that command needs, exactly as if you typed it.
+- Village finder: go to the nearest village of each kind. Needs the teleport
+  privilege.
+- "Mini buttons shown": how many mini buttons appear (0 to 10, default 4).
+- Each mini button can show a picture; the picture button cycles through ten.
+
+Inventory
+- An HQ button and your mini buttons appear above the survival inventory and
+  beside the creative inventory.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/hq               Open the HQ screen. (Everyone.)
+/hq list          List all shortcuts.
+/hq add <name> <command>   Add a shortcut of your own.
+/hq remove <name>          Remove one of your own shortcuts.
+/hq <name>                 Run a shortcut by name (yours, or a mod's).
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Everything is per player and saved on the player. Change it in the HQ screen.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+Other mods register a shortcut with hq.register_shortcut{id, name, command or
+func, icon, short} and only if HQ is installed. Tameful, Populations,
+Identifiable, Mob Crate, No Sleep, Conflict Resolution, Peace and Quiet and
+Wave Matrix all do.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Shortcuts run commands with your own privileges, so HQ gives nobody anything
+  they could not type.
+- The inventory buttons depend on Mineclonia's inventory screens.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

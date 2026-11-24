@@ -1,0 +1,86 @@
+================================================================
+POPULATIONS
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         populations
+
+Villages full of people: villagers become men and women with names, player skins
+and families, and they stand up for each other.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+People
+- Every villager is a man or a woman with a player skin: Steve-style for men,
+  Alex-style (slim arms) for women. Zombie villagers look like ordinary zombies.
+- Villages stay close to half men, half women, including newborns and spawn
+  eggs.
+- Every villager gets a random first and last name, also used in death
+  messages and the trade window title. A name tag still renames them.
+- Name tags show name, job and health, up to 32 blocks away.
+- Children are half size.
+- No more villager "hmm" sounds.
+
+Families
+- Only a man and a woman can have a baby.
+- Their first baby makes them partners: she takes his last name, and so does
+  the baby.
+- Partners only have children together while both are alive.
+- If one partner dies, the other may start a new family.
+- A zombified and cured villager is still the same person.
+
+Health and fighting
+- Adults have 40 health, children 20. Everyone heals 1 health every 2 seconds
+  after 10 seconds out of combat.
+- Adults fight back against mobs and players that hurt them, in armor and with
+  a sword (leather and stone by default). The gear is gone after the fight.
+- Each hit a villager takes has a chance to call one helper (10% on the first
+  hit, 20% on the second, up to 60%).
+- At half health a villager stops fighting and runs. Every hit it takes while
+  running calls one more helper for sure.
+- Villagers calm down 10 seconds after the fighting stops.
+- Children never fight (they always run).
+
+Iron golems
+- 30% faster, 25% stronger, and spot enemies from 32 blocks (can be turned
+  off).
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/pop    Open the settings screen. (World owner or players with the server privilege.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Change them with /pop. Saved in the mod's storage in the world.
+
+stronger_golems              on       Faster, stronger golems with longer sight.
+villagers_defend_themselves  on       Villagers fight whoever hurts them.
+villagers_can_aid_others     on       Villagers come to help each other.
+villager_armor               leather  none, leather, chain, copper, iron, gold,
+                                      diamond, netherite
+villager_sword               stone    wood, stone, copper, iron, gold, diamond,
+                                      netherite
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Populations" button in the HQ list opens /pop.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Changes the existing villagers. It adds no new ones, so villages, trading and
+  jobs work as normal.
+- Each person is saved with the villager, so names and families survive
+  restarts.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

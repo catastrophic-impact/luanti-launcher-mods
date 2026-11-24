@@ -1,0 +1,59 @@
+================================================================
+MOB CRATE
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         mobcrate
+
+Pack up a mob, carry it in your inventory, let it out somewhere else: the same
+mob comes back, with its health, name and everything else.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+- Craft a Mob Crate with 9 wood planks (any kind). It stacks to 16.
+- Right-click or left-click a mob with an empty crate to pack it. You get a
+  Full Mob Crate (one per stack) named after the mob.
+- Right-click a block with a full crate to let the mob out. It faces you.
+  You get the empty crate back.
+- Not allowed: players, items and vehicles, bosses (setting), another player's
+  tamed animal (setting), dead mobs, mobs riding or carrying another mob, mobs
+  on your blacklist, and anything inside a protected area.
+- A player riding the mob is lifted off first.
+- If there is no room for the mob, the crate stays full and nothing is lost.
+  If your inventory is full the crate drops at your feet.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/mobcrate         Open the settings. (World owner or players with the server privilege.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Change them with /mobcrate. Saved in the mod's storage in the world.
+
+allow_bosses              off    Bosses can be put in a crate.
+allow_other_players_pets  off    Other players' tamed animals can be put in a crate.
+blacklist                 empty  Mob ids that never go in a crate, separated by
+                                 commas, for example mobs_mc:villager.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Mob Crate" button in the HQ list runs /mobcrate.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Works with Tameful: a crated pet can still be stabled.
+- Works with Populations: the person's name and family come back with them.
+- A crate lost in lava or the void takes the mob with it.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

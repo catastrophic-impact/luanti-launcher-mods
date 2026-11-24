@@ -1,0 +1,44 @@
+================================================================
+MOD NAME
+================================================================
+Version:        x.y.z
+Requires:       Mineclonia, uikit (included), other mods
+Install on:     Server (works in single player too)
+Mod ID:         modid
+
+One or two sentences that sell the mod.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Feature group
+- Point
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/command          What it does. (Who can use it.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Where they are saved and how to open them in game.
+
+setting_name      Default    What it does.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Name" button in the HQ list runs /command.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Multiplayer notes, other mods, things to know.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+x.y.z
+- Change

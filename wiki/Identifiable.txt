@@ -1,0 +1,76 @@
+================================================================
+IDENTIFIABLE
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         identifiable
+
+A small panel names the block, creature, player or item you look at, with health,
+harvest info, crop growth, light level and more.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Panel
+- Name, picture and id of what you are looking at (through water too).
+- Creatures: health and armor. Players: name, optionally health.
+- Blocks: harvest line (which tool and level), crop growth, villager job and
+  tier, the mob inside a spawner, light level (several modes) and whether
+  mobs could spawn there.
+- Breaking bar: a bar at the bottom of the panel shows how far the block you
+  are digging has come (survival).
+- Long lines wrap to half the window width, up to 8 lines.
+- Five backgrounds: Dark, Button, Advancement, Tooltip, None. Nine text colors
+  and four text sizes.
+
+Zoom
+- Hold the zoom key (Z) to zoom. The panel reaches farther while zoomed.
+
+Position
+- Place the panel anywhere: Position mode in /idconfig, then click where it
+  should go, or align left, center or right.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/idconfig         Open your settings with a live preview. (Everyone.)
+/idhide           Hide or show the panel.
+/idblacklist      Hide (or show again) the thing you are looking at.
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Per player, in /idconfig. Saved on the player. Reset restores the defaults but
+keeps your hidden list.
+
+enabled, show_id, show_mod_name, show_icon       on
+show_health, show_armor, show_block_details      on
+show_harvest, show_villager, show_items          on
+show_spawner, show_breaking                      on
+show_player_health, show_spawnable               off
+light_mode          off     off, light, sky, both, combined
+range               5       5, 10, 16 or 32 blocks
+text_align          left    left, center, right
+text_size           normal  small, normal, large, huge
+hud_color           white   nine colors
+background_style    dark    dark, button, advancement, tooltip, none
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed there are three buttons: "Identifiable" opens /idconfig,
+"hide/show panel" runs /idhide, "hide what I look at" runs /idblacklist.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- The panel is drawn by the server, so it needs no client mod.
+- Text width is estimated, so very long names may wrap slightly early or late.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

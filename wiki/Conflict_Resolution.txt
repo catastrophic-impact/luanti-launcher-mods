@@ -1,0 +1,64 @@
+================================================================
+CONFLICT RESOLUTION
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         conflictresolution
+
+Keep the peace on a shared world: turn player-versus-player damage on or off and
+protect tamed animals from other players.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Rules
+- PvP: when off, players can't hurt each other. Off by default.
+- Protect pets: other players can't hurt your tamed animals. On by default.
+- Protect own pets: you can't hurt your own tamed animals either. On by default.
+
+What counts as a player's attack
+- Punches and weapons, arrows and tridents the player shot, hits by a tamed
+  animal (counted as its owner), and TNT the player lit.
+- Chain-reaction TNT is not attributed to anyone.
+- Hits with no player behind them (lava, fire, wild mobs) are never blocked.
+
+Feedback
+- A blocked attacker sees a short message in the action bar.
+- Changes are announced in chat.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/pvp                       Show the current settings. (Everyone.)
+/pvp on | off              Turn PvP on or off. (World owner or players with the server privilege.)
+/pvp pets on | off         Protect other players' pets on or off. (Same.)
+/pvp ownpets on | off      Protect your own pets from you on or off. (Same.)
+/cr                        Open the settings screen. (Everyone can look; only the
+                           owner or server privilege can change.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Saved in the mod's storage in the world.
+
+pvp             off     Players can hurt each other.
+protect_pets    on      Other players' pets are protected.
+protect_own     on      Owners can't hurt their own pets.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Conflict Resolution" button in the HQ list runs /cr.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Works with Tameful pets and any tamed animal that has an owner.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

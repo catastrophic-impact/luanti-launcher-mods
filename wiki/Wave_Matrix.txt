@@ -1,0 +1,75 @@
+================================================================
+WAVE MATRIX
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included); optional wm_music for your own songs
+Install on:     Server (works in single player too)
+Mod ID:         wavematrix
+
+Your own music player: twelve bundled tracks, your own .ogg songs, favorites and
+the Mineclonia music discs, all playing for you alone.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Playing
+- Music plays for each player on their own, with their own settings. Nothing is
+  downloaded when you join: a song is sent to you the first time you play it.
+- Mode: Shuffle, In order or Loop.
+- Immersion: Natural (a random pause of about 3 to 8 minutes between songs) or
+  Continuous (song after song).
+- Plays: All songs or only your Favorites.
+- Volume. Changing it restarts the current song at the same spot.
+- Show song name: the song's name appears on screen while it plays.
+- A song starts about 5 seconds after you join, unless you pressed Stop.
+
+The window
+- A list of songs in groups, a Now playing area with a progress bar, Play,
+  Stop and Next, and a star to mark favorites.
+- Click a group's title to put the whole group in or out of Shuffle and In
+  order. Click a song to select it; the note button plays it.
+- The window updates while a song plays.
+
+Songs
+- Bundled: twelve tracks, shown as "Track 1" to "Track 12".
+- Your own: put .ogg files in the music folder. Every subfolder becomes a group.
+- Music discs: the Mineclonia discs are a group of their own, left out by
+  default.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/wm               Open the Wave Matrix window. (Everyone.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Per player, in the /wm window. Saved on the player.
+
+mode              Shuffle      Shuffle, In order or Loop.
+immersion         Natural      Natural or Continuous.
+plays             All          All songs or Favorites.
+volume            50%          Playback volume.
+show_name         on           Show the song name while playing.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Wave Matrix" button in the HQ list runs /wm.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Only .ogg songs are supported.
+- Your own songs live in a shared music folder (the wm_music mod, turned on
+  for each world that uses Wave Matrix). On a server it is the server's folder,
+  so only people with access to it can add songs.
+- The launcher's Folders tab manages the music folder.
+- The bundled tracks are all rights reserved and for use with this mod only.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

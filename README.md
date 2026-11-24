@@ -8,6 +8,7 @@ Mods for Luanti games (built on Mineclonia) and a portable launcher to manage th
   - `hq`, `tameful`, `populations`, `identifiable`, `mobcrate`, `nosleep`, `conflictresolution`, `peaceandquiet`, `wavematrix`, `luanti_fixes`.
 - `launcher/` - the Luanti Launcher (Electron): per-world mod toggles, sync, music/skin folders, an Updates tab that
   reads `mods/` of this repository, and a ContentDB tab. It only goes online when you press a button.
+- `wiki/` - one plain-text page per mod (features, commands, settings).
 - `tools/`, `tests/` - developer tooling and test mods (`tools/lt`).
 - `patches/` - patch sets for upstream games (currently none).
 - `tui_launcher/` - an older terminal launcher, not maintained.

@@ -1,0 +1,48 @@
+================================================================
+PEACE AND QUIET
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         peaceandquiet
+
+Hides the advancement popups so nothing jumps onto your screen. It is a
+per-player switch and the popups are hidden by default.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+- Advancement popups and their sound are hidden. You still earn the
+  advancement, its prizes and its experience.
+- The advancement line in chat stays.
+- Each player chooses for themselves. Hidden by default.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/peaceandquiet    Open the settings. (Everyone.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Saved on the player.
+
+hide_advancements   on    Hide advancement popups.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Peace and Quiet" button in the HQ list runs
+/peaceandquiet. Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Recipe, tutorial and system popups don't exist in Mineclonia, so there is
+  nothing else to hide.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.

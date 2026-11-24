@@ -1,0 +1,50 @@
+================================================================
+NO SLEEP
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         nosleep
+
+Beds set your respawn point but you can never sleep: the night has to be
+survived.
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+- Right-click a bed at any time of day to set your respawn point. You don't
+  lie down and the night doesn't pass.
+- The usual space rules for a bed still apply.
+- "Respawn point set" shows in the action bar.
+- Beds in the Nether and the End still explode, as normal.
+- The world owner can allow sleeping again, so beds work as usual.
+
+----------------------------------------------------------------
+COMMANDS
+----------------------------------------------------------------
+/nosleep          Open the settings. (Everyone can look; only the world owner or
+                  players with the server privilege can change them.)
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Saved in the mod's storage in the world.
+
+allow_sleeping    off    Allow sleeping again (beds work as normal).
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "No Sleep" button in the HQ list runs /nosleep.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Respawn anchors also show their message in the action bar.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First release.
