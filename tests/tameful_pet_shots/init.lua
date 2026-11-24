@@ -1,0 +1,27 @@
+local function log(s) core.log("action", "[PET_SHOTS] " .. s) end
+core.register_on_joinplayer(function(player)
+	if player:get_player_name() ~= "tester" then return end
+	core.after(18, function()
+		core.set_player_privs("tester", { interact = true, shout = true, server = true })
+		local obj = core.add_entity(vector.offset(vector.round(player:get_pos()), 3, 1, 0), "mobs_mc:wolf")
+		local ent = obj:get_luaentity()
+		player:get_inventory():add_item("main", "tameful:lead 1")
+		player:set_wielded_item(ItemStack("tameful:lead"))
+		ent.on_rightclick(ent, player)
+		for _, f in ipairs(core.registered_on_player_receive_fields) do if f(player, "tameful:tame", { yes = "true" }) then break end end
+		core.close_formspec("tester", "tameful:tame")
+		core.after(2, function()
+			tameful.show_pet("tester", ent)
+			core.after(3, function() log("SHOT_READY pet_window")
+				core.after(12, function()
+					tameful.show_roster("tester")
+					core.after(3, function() log("SHOT_READY roster")
+						core.after(12, function()
+							for _, f in ipairs(core.registered_on_player_receive_fields) do if f(player, "tameful:roster", { pets = "CHG:1" }) then break end end
+							core.after(3, function() log("SHOT_READY roster_selected")
+								core.after(12, function() log("SHOTS_DONE"); core.request_shutdown("done") end) end)
+						end) end)
+				end) end)
+		end)
+	end)
+end)

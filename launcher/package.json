@@ -1,0 +1,26 @@
+{
+  "name": "luanti-launcher",
+  "productName": "Luanti Launcher",
+  "version": "0.1.0",
+  "description": "Portable launcher for Luanti: launch worlds, sync mods, per-world mod toggles, music/skins folders.",
+  "license": "GPL-3.0-or-later",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "test": "node --test test/",
+    "icon": "node tools/make-icon.js",
+    "dist": "electron-builder --linux dir AppImage"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "org.luanti.mods.launcher",
+    "productName": "Luanti Launcher",
+    "directories": { "output": "dist" },
+    "files": ["src/**", "ui/**", "assets/**", "package.json"],
+    "linux": { "target": ["dir", "AppImage"], "category": "Game", "icon": "assets/icon.png", "artifactName": "LuantiLauncher-${version}-${arch}.${ext}" },
+    "asar": true
+  }
+}

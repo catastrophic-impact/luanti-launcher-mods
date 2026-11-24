@@ -1,0 +1,9 @@
+DEVNOTES.md
+reference/
+tmp/
+__pycache__/
+DEVNOTES_ENGINE.md
+node_modules/
+launcher/dist/
+launcher/assets/background.jpg
+tui_launcher/luanti-launcher-linux-*

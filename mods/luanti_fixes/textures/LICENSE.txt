@@ -1,0 +1,3 @@
+mcl_poplar_poplar_shelf.png is a recolored copy of Mineclonia's birch shelf texture, which is
+derived from the Pixel Perfection resource pack by XSSheep, licensed CC BY-SA 4.0
+(http://creativecommons.org/licenses/by-sa/4.0/). This file is shared under the same license.

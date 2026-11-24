@@ -1,0 +1,234 @@
+#!/bin/sh
+# lt - Luanti dev tool entry point. Works from the VS Code sandbox (re-runs itself on the host) or on the host.
+#   lt sync                    copy Mineclonia + mods/ + tests/ into the Luanti flatpak data dir
+#   lt stop                    stop every dev server/client we started (never the user's own Luanti window)
+#   lt newworld                recreate the throwaway world claude_dev
+#   lt test <testmod> [opts]   fresh world, server + real client "tester", then restart-check; prints PASS/FAIL summary
+#        opts: --only a,b (test mod runs just those named steps; see its NAMES list) -v (show every PASS line)  --keep (keep world)  --no-client  --no-restart  --timeout N (seconds, default 240)
+#   lt shots [mod]             run a shots test mod (default tameful_shots) in a real client; screenshots -> tmp/shots/*.png
+#   lt patchwork [project]     project = mineclonia (default) | luanti. make tmp/{mc,lu}_work (pristine + existing patches) to edit, tmp/{mc,lu}_base = same, untouched
+#   lt mkpatch <name> [project]  save the diff base -> work as patches/<project>/NNNN-<name>.patch (see patches/README.md)
+#   lt upstream [project]      after pulling upstream: files changed since the patches were last checked, and which of them our patches touch
+#   lt perf <scenario|all> [--engine DIR] [--label NAME] [--secs N]   headless server load test on our built engine (see comment at cmd_perf)
+#   lt status                  show our running processes
+#   lt log [server1|server2|client] [N]   last N lines of a log (default server1, 60)
+if [ -n "$FLATPAK_ID" ] && [ -z "$LT_ON_HOST" ]; then
+  exec flatpak-spawn --host env LT_ON_HOST=1 "$0" "$@"
+fi
+ROOT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+DATA=$HOME/.var/app/org.luanti.luanti/.minetest
+WORLD=$DATA/worlds/claude_dev
+PORT=30111
+TMP=$ROOT/tmp; mkdir -p "$TMP"
+LUANTI="flatpak run org.luanti.luanti"
+
+cmd_sync() {
+  mkdir -p "$DATA/games/mineclonia" "$DATA/mods"
+  rsync -a --delete --exclude .git "$ROOT/reference/mineclonia/" "$DATA/games/mineclonia/"
+  # Our mods go to the user-visible mods folder. Test/probe mods must NEVER be there (enabling "all mods" in the menu would run them: a probe
+  # that shuts the server down looked like a crash): they live in the dev world's worldmods/ only (see sync_tests).
+  for m in "$ROOT"/mods/*/; do
+    [ -d "$m" ] && rsync -a --delete "$m" "$DATA/mods/$(basename "$m")/"
+  done
+  for t in "$ROOT"/tests/*/; do rm -rf "$DATA/mods/$(basename "$t")"; done   # stale copies from older versions of this script
+  rm -rf "$DATA/mods/id_probe" "$DATA/mods/md_spike"
+  apply_patches "$DATA/games/mineclonia" || exit 1
+  cp "$ROOT/tools/dev.conf" "$DATA/dev.conf"
+  echo "synced to $DATA"
+}
+# Patch sets: <project> = mineclonia | luanti. Pristine clone = reference/<project>, patches = patches/<project>/*.patch (name order),
+# upstream commit the patches were last checked against = patches/BASE.txt (mineclonia, historic location) or patches/<project>/BASE.txt.
+proj_pfx() { [ "$1" = luanti ] && echo lu || echo mc; }
+proj_base_file() { [ "$1" = mineclonia ] && echo "$ROOT/patches/BASE.txt" || echo "$ROOT/patches/$1/BASE.txt"; }
+proj_check() { case "$1" in mineclonia|luanti) ;; *) echo "unknown project '$1' (mineclonia|luanti)" >&2; exit 2;; esac; }
+# apply_patches <dir> [project]: apply patches to a copy. Warn when upstream moved since the patches were last checked.
+apply_patches() {
+  dir="$1"; pr="${2:-mineclonia}"
+  head=$(git -C "$ROOT/reference/$pr" rev-parse HEAD 2>/dev/null)
+  base=$(cat "$(proj_base_file "$pr")" 2>/dev/null)
+  [ -n "$base" ] && [ "$head" != "$base" ] && echo "WARNING: reference/$pr is at $head but patches were last checked at $base (see patches/README.md; run: lt upstream $pr)" >&2
+  for p in "$ROOT"/patches/$pr/*.patch; do
+    [ -f "$p" ] || continue
+    (cd "$dir" && git apply --whitespace=nowarn "$p") || { echo "PATCH FAILED: $(basename "$p") (upstream changed? see patches/README.md)" >&2; return 1; }
+  done
+}
+cmd_patchwork() {
+  pr="${1:-mineclonia}"; proj_check "$pr"; x=$(proj_pfx "$pr")
+  rm -rf "$TMP/${x}_base" "$TMP/${x}_work"; mkdir -p "$TMP/${x}_base" "$ROOT/patches/$pr"
+  rsync -a --exclude .git "$ROOT/reference/$pr/" "$TMP/${x}_base/"
+  apply_patches "$TMP/${x}_base" "$pr" || exit 1
+  cp -a "$TMP/${x}_base" "$TMP/${x}_work"
+  echo "edit files in $TMP/${x}_work, then: lt mkpatch <name> $pr"
+}
+cmd_mkpatch() {
+  pr="${2:-mineclonia}"; proj_check "$pr"; x=$(proj_pfx "$pr")
+  [ -n "$1" ] && [ -d "$TMP/${x}_work" ] || { echo "usage: lt mkpatch <name> [mineclonia|luanti] (after lt patchwork [project])"; exit 2; }
+  n=$(ls "$ROOT"/patches/$pr/*.patch 2>/dev/null | wc -l); n=$(printf '%04d' $((n+1)))
+  out="$ROOT/patches/$pr/$n-$1.patch"
+  (cd "$TMP" && diff -ruN ${x}_base ${x}_work | sed -e "s#^--- ${x}_base/#--- a/#" -e "s#^+++ ${x}_work/#+++ b/#" -e "s#^diff -ruN ${x}_base/\(.*\) ${x}_work/.*#diff -ruN a/\1 b/\1#") > "$out"
+  [ -s "$out" ] || { rm -f "$out"; echo "no changes in tmp/${x}_work"; exit 1; }
+  git -C "$ROOT/reference/$pr" rev-parse HEAD > "$(proj_base_file "$pr")"
+  echo "wrote $out (BASE = $(cut -c1-8 "$(proj_base_file "$pr")"))"
+}
+# lt upstream [project]: what changed upstream since the patches were last checked, and which of those files our patches touch.
+cmd_upstream() {
+  pr="${1:-mineclonia}"; proj_check "$pr"
+  r="$ROOT/reference/$pr"; base=$(cat "$(proj_base_file "$pr")" 2>/dev/null); head=$(git -C "$r" rev-parse HEAD)
+  echo "reference/$pr HEAD=$(echo $head | cut -c1-8)  patches checked at ${base:-<none>}"
+  [ -z "$base" ] && { echo "no patches yet"; return; }
+  [ "$base" = "$head" ] && { echo "upstream unchanged since the patches were last checked"; return; }
+  git -C "$r" diff --name-only "$base" "$head" | sort > "$TMP/up_changed.txt"
+  cat "$ROOT"/patches/$pr/*.patch 2>/dev/null | sed -n 's#^diff -ruN a/\(.*\) b/.*#\1#p' | sort -u > "$TMP/up_ours.txt"
+  echo "upstream files changed: $(wc -l < "$TMP/up_changed.txt"); files our patches touch: $(wc -l < "$TMP/up_ours.txt")"
+  echo "CONFLICT CANDIDATES (changed upstream AND patched by us):"; comm -12 "$TMP/up_changed.txt" "$TMP/up_ours.txt"
+}
+# lt perf <scenario[,scenario...]|all> [--engine DIR] [--label NAME] [--secs N] [--set key=value ...]
+# Headless server load test on OUR built engine (luanti-box), no client window. Scenarios live in tests/perf_probe. Output: tmp/perf/<label>-<scenario>.txt
+# Default engine = reference/luanti/bin (baseline build); compare a patched build with --engine <dir containing ./luanti> --label patched.
+cmd_perf() {
+  list="$1"; shift; eng="$ROOT/reference/luanti/bin"; label=base; secs=20; extra=""
+  while [ $# -gt 0 ]; do case "$1" in --engine) eng="$2"; shift;; --label) label="$2"; shift;; --secs) secs="$2"; shift;; --set) extra="$extra$(echo "$2" | sed 's/=/ = /')\n"; shift;; esac; shift; done
+  [ "$list" = all ] && list="idle,mobs,items,falling,liquid,timers,abms"
+  [ -n "$list" ] || { echo "usage: lt perf <scenario[,..]|all> [--engine DIR] [--label NAME] [--secs N]"; exit 2; }
+  [ -x "$eng/luanti" ] || { echo "no engine binary at $eng/luanti (build it first)"; exit 2; }
+  cmd_sync >/dev/null; mkdir -p "$TMP/perf"
+  PW="$TMP/perf_world"
+  for sc in $(echo "$list" | tr ',' ' '); do
+    rm -rf "$PW"; mkdir -p "$PW/worldmods"; rsync -a "$ROOT/tests/perf_probe/" "$PW/worldmods/perf_probe/"
+    printf 'gameid = mineclonia\nbackend = sqlite3\nplayer_backend = sqlite3\nload_mod_perf_probe = true\n' > "$PW/world.mt"
+    echo "$sc" > "$PW/perf_scenario.txt"; echo "$secs" > "$PW/perf_seconds.txt"
+    cp "$ROOT/tools/dev.conf" "$TMP/perf.conf"; printf 'profiler.load = true\nmax_forceloaded_blocks = 2000\nenable_sscsm = nowhere\nprofiler_print_interval = 5\ndebug_log_level = info\n' >> "$TMP/perf.conf"; printf "$extra" >> "$TMP/perf.conf"
+    out="$TMP/perf/$label-$sc.txt"
+    distrobox enter luanti-box -- sh -c "cd '$eng' && MINETEST_GAME_PATH='$DATA/games' MINETEST_MOD_PATH='$DATA/mods' timeout $((secs+90)) ./luanti --server --verbose --gameid mineclonia --world '$PW' --config '$TMP/perf.conf' --port 30112" > "$TMP/perf/server.log" 2>&1
+    grep -h "PERF_TEST\]" "$TMP/perf/server.log" | sed 's/^[0-9: -]*ACTION\[[A-Za-z0-9-]*\]: //' > "$out"
+    awk '/INFO\[[A-Za-z0-9-]*\]: Profiler:/{blk=""; inb=1; next} inb && /INFO\[[A-Za-z0-9-]*\]:   /{blk=blk $0 "\n"; next} inb{inb=0; if (blk ~ /ServerEnv::step\(\) \[ms\] _/) last=blk} END{printf "%s", last}' "$TMP/perf/server.log" | grep "___" | sed 's/^.*INFO\[[^]]*\]:   /ENGINE /' >> "$out"
+    grep -h "ERROR\[" "$TMP/perf/server.log" | grep -v MINETEST_USER | head -3 | sed 's/^/LOGERR /' >> "$out"
+    grep -q SCENARIO_DONE "$out" || echo "NOTE: $sc did not finish (see $TMP/perf/server.log)" >> "$out"
+    grep -h "RESULT\|LUA\|ENGINE\|TOP\|NOTE\|LOGERR\|ABORT" "$out"
+  done
+}
+# Only the test being run is placed in the dev world's worldmods/ (worldmods are always loaded; load_mod_x = false does not stop them).
+sync_tests() {
+  rm -rf "$WORLD/worldmods"; mkdir -p "$WORLD/worldmods"
+  [ -n "$1" ] && [ -d "$ROOT/tests/$1" ] && rsync -a "$ROOT/tests/$1/" "$WORLD/worldmods/$1/"
+}
+cmd_stop() {
+  for p in $(pgrep -f "[p]ort $PORT"); do kill "$p" 2>/dev/null; done
+  sleep 3
+  for p in $(pgrep -f "[p]ort $PORT"); do kill -9 "$p" 2>/dev/null; done
+}
+cmd_newworld() {
+  rm -rf "$WORLD"; mkdir -p "$WORLD"
+  printf 'gameid = mineclonia\nbackend = sqlite3\nworld_name = claude_dev\ncreative_mode = true\nenable_damage = false\nmod_storage_backend = sqlite3\nauth_backend = sqlite3\nplayer_backend = sqlite3\n' > "$WORLD/world.mt"
+  for m in "$ROOT"/mods/*/; do echo "load_mod_$(basename "$m") = true" >> "$WORLD/world.mt"; done
+  [ -d "$DATA/mods/wm_music" ] && echo "load_mod_wm_music = true" >> "$WORLD/world.mt"  # shared music data mod (not in mods/, never synced)
+  sync_tests "$TEST_TO_RUN"
+}
+cmd_status() { ps -eo pid,etime,args | grep -E "[p]ort $PORT" | cut -c1-140; }
+cmd_log() { f="${1:-server1}"; tail -n "${2:-60}" "$TMP/$f.log"; }
+cmd_test() {
+  T="$1"; shift
+  keep=0; client=1; restart=1; to=240; verbose=0; only=
+  while [ $# -gt 0 ]; do case "$1" in
+    --keep) keep=1;; -v|--verbose) verbose=1;; --no-client) client=0;; --no-restart) restart=0;; --timeout) to="$2"; shift;; --only) only="$2"; shift;; esac; shift; done
+  [ -d "$ROOT/tests/$T" ] || { echo "no such test mod: tests/$T"; exit 2; }
+  TEST_TO_RUN="$T"
+  cmd_stop; cmd_sync >/dev/null
+  [ $keep = 1 ] || cmd_newworld
+  [ $keep = 1 ] && sync_tests "$T"
+  echo "load_mod_$T = true" >> "$WORLD/world.mt"
+  if [ -n "$only" ]; then echo "$only" > "$WORLD/test_only.txt"; fi
+  rm -f "$TMP"/server1.log "$TMP"/server2.log "$TMP"/client.log
+  $LUANTI --server --gameid mineclonia --world "$WORLD" --config $DATA/dev.conf --port $PORT > "$TMP/server1.log" 2>&1 &
+  i=0; until grep -q "listening on" "$TMP/server1.log" 2>/dev/null || [ $i -gt 60 ]; do sleep 1; i=$((i+1)); done
+  [ $client = 1 ] && $LUANTI --go --address 127.0.0.1 --port $PORT --name tester --password pw > "$TMP/client.log" 2>&1 &
+  i=0; while [ $i -lt $((to/2)) ]; do
+    grep -q "SCENARIO_DONE\|SCENARIO_ABORT" "$TMP/server1.log" && break
+    pgrep -f "[p]ort $PORT" >/dev/null || break
+    sleep 2; i=$((i+1)); done
+  sleep 4; cmd_stop
+  if [ $restart = 1 ] && grep -q SCENARIO_DONE "$TMP/server1.log"; then
+    timeout -s TERM 90 $LUANTI --server --gameid mineclonia --world "$WORLD" --config $DATA/dev.conf --port $PORT > "$TMP/server2.log" 2>&1 &
+    i=0; while [ $i -lt 45 ]; do grep -q PERSIST_DONE "$TMP/server2.log" 2>/dev/null && break; sleep 2; i=$((i+1)); done
+    sleep 2; cmd_stop
+  fi
+  grep -h "ERROR\[\|Traceback\|stack traceback" "$TMP"/server*.log | grep -v "MINETEST_USER" | head -10 | sed 's/^/LOGERR /'
+  if [ $verbose = 1 ]; then pat='_TEST\] '; else pat='_TEST\] \(FAIL\|DIAG\|SCENARIO_ABORT\|NOTE\)'; fi
+  grep -h "$pat" "$TMP"/server1.log "$TMP"/server2.log 2>/dev/null | sed 's/^[0-9: -]*ACTION\[Server\]: //'
+  p=$(cat "$TMP"/server*.log 2>/dev/null | grep -c "_TEST\] PASS"); f=$(cat "$TMP"/server*.log 2>/dev/null | grep -c "_TEST\] FAIL")
+  echo "== $p passed, $f failed =="
+  [ "$f" = 0 ] && [ "$p" -gt 0 ]
+}
+# KDE Wayland: raise the dev client window through KWin's WindowsRunner (krunner D-Bus); skip the user's own Luanti (main menu) window.
+focus_game() {
+  qdbus6 --literal org.kde.KWin /WindowsRunner org.kde.krunner1.Match "luanti" 2>/dev/null | grep -o '"0_{[0-9a-f-]*}", "[^"]*"' | sort -u > "$TMP/shots_windows.log"
+  id=$(qdbus6 --literal org.kde.KWin /WindowsRunner org.kde.krunner1.Match "luanti" 2>/dev/null | grep -o '"0_{[0-9a-f-]*}", "Luanti[^"]*"' | grep -v "Main Menu" | grep -v "Launcher" | head -1 | cut -d'"' -f2)
+  [ -n "$id" ] && qdbus6 org.kde.KWin /WindowsRunner org.kde.krunner1.Run "$id" "" >/dev/null 2>&1 && sleep 1
+}
+# lt scene <shotsmod>  : start server + real client and LEAVE them running (the mod must not shut down); waits for its first SHOT_READY and prints the game window geometry.
+# lt snap <name>       : focus the game window and save tmp/shots/<name>.png (with the mouse pointer). lt ptr move|click X Y | down | up | where : move/click the real mouse (tools/ptr.py, screen pixels).
+# Use lt stop when finished. Needed to see hover/pressed states and to click real buttons.
+win_geom() {
+  js="$TMP/kwin_geom.js"
+  cat > "$js" <<'JS'
+var l = workspace.windowList ? workspace.windowList() : workspace.clientList();
+for (var i = 0; i < l.length; i++) { var w = l[i]; if (String(w.caption).indexOf("Luanti") === 0 && String(w.caption).indexOf("Main Menu") < 0) print("LTGEOM " + w.frameGeometry.x + " " + w.frameGeometry.y + " " + w.frameGeometry.width + " " + w.frameGeometry.height + " | " + w.clientGeometry.x + " " + w.clientGeometry.y + " " + w.clientGeometry.width + " " + w.clientGeometry.height); }
+JS
+  qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$js" lt_geom >/dev/null 2>&1
+  qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.start >/dev/null 2>&1; sleep 1
+  journalctl --user --since "20 sec ago" 2>/dev/null | grep -o "LTGEOM .*" | tail -1
+  qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.unloadScript lt_geom >/dev/null 2>&1
+}
+cmd_scene() {
+  M="${1:?usage: lt scene <shotsmod>}"
+  TEST_TO_RUN="$M"
+  cmd_stop; cmd_sync >/dev/null; cmd_newworld
+  echo "load_mod_$M = true" >> "$WORLD/world.mt"
+  mkdir -p "$TMP/shots"; rm -f "$TMP"/server1.log
+  $LUANTI --server --gameid mineclonia --world "$WORLD" --config $DATA/dev.conf --port $PORT > "$TMP/server1.log" 2>&1 &
+  i=0; until grep -q "listening on" "$TMP/server1.log" 2>/dev/null || [ $i -gt 60 ]; do sleep 1; i=$((i+1)); done
+  $LUANTI --go --address 127.0.0.1 --port $PORT --name tester --password pw > "$TMP/client.log" 2>&1 &
+  i=0; until grep -q "SHOT_READY" "$TMP/server1.log" 2>/dev/null || [ $i -gt 120 ]; do sleep 1; i=$((i+1)); done
+  grep -q "SHOT_READY" "$TMP/server1.log" || { echo "scene did not get ready (see tmp/server1.log)"; return 1; }
+  focus_game; echo "scene ready: $(grep -o 'SHOT_READY [A-Za-z0-9_]*' "$TMP/server1.log" | head -1)"; win_geom
+}
+cmd_snap() {
+  n="${1:?usage: lt snap <name>}"; mkdir -p "$TMP/shots"; focus_game
+  spectacle -b -n -a -p -o "$TMP/shots/$n.png" >/dev/null 2>&1; echo "$TMP/shots/$n.png"
+}
+cmd_ptr() { python3 -I "$ROOT/tools/ptr.py" "$@"; }
+cmd_shots() {
+  # lt shots [shotsmod]  (default tameful_shots): runs the shots test mod with a real client; the mod logs
+  # "SHOT_READY <name>" and "SHOTS_DONE"; screenshots go to tmp/shots/<name>.png
+  M="${1:-tameful_shots}"
+  TEST_TO_RUN="$M"
+  cmd_stop; cmd_sync >/dev/null; cmd_newworld
+  echo "load_mod_$M = true" >> "$WORLD/world.mt"
+  rm -rf "$TMP/shots"; mkdir -p "$TMP/shots"; rm -f "$TMP"/server1.log
+  $LUANTI --server --gameid mineclonia --world "$WORLD" --config $DATA/dev.conf --port $PORT > "$TMP/server1.log" 2>&1 &
+  i=0; until grep -q "listening on" "$TMP/server1.log" 2>/dev/null || [ $i -gt 60 ]; do sleep 1; i=$((i+1)); done
+  $LUANTI --go --address 127.0.0.1 --port $PORT --name tester --password pw > "$TMP/client.log" 2>&1 &
+  done_list=""; i=0
+  while [ $i -lt 120 ]; do
+    for n in $(grep -o "SHOT_READY [A-Za-z0-9_]*" "$TMP/server1.log" | cut -d' ' -f2); do
+      case " $done_list " in *" $n "*) ;; *)
+        sleep 1
+        # Wayland: the game window is raised first through KWin (focus_game); width is NOT a usable check (the game window is 1410..2050 px wide).
+        tries=0
+        while [ $tries -lt 4 ]; do
+          focus_game
+          spectacle -b -n -a -o "$TMP/shots/$n.png" >/dev/null 2>&1
+          w=$(python3 -I -c "import struct,sys;d=open(sys.argv[1],'rb').read(32);print(struct.unpack('>I',d[16:20])[0])" "$TMP/shots/$n.png" 2>/dev/null)
+          [ -n "$w" ] && break
+          tries=$((tries+1)); sleep 1
+        done
+        done_list="$done_list $n";; esac
+    done
+    grep -q SHOTS_DONE "$TMP/server1.log" && break
+    sleep 1; i=$((i+1))
+  done
+  cmd_stop
+  ls -1 "$TMP/shots"
+}
+c="$1"; shift
+case "$c" in sync|stop|newworld|status|log|test|shots|patchwork|mkpatch|upstream|perf|scene|snap|ptr) "cmd_$c" "$@";; *) sed -n 2,14p "$0"; exit 1;; esac

@@ -1,0 +1,19 @@
+CHANGES
+- 2026-11-20: dev notes migrated to DEVNOTES.md (local); reference repos added.
+- 2026-11-20: Tameful per-species stats (health, attack, armor, crit).
+- 2026-11-20: Tameful riding (all land pets, per-species speed/jump, saddle bonus, step climbing, Shift to dismount).
+- 2026-11-20: patches/ workflow + lt patchwork/mkpatch; luanti_fixes mod (poplar shelf texture, removes the red startup error).
+- 2026-11-20: HQ mod (shortcut screen, own commands, quick buttons, inventory HQ + mini buttons for survival and creative).
+- 2026-11-20: HQ village finder and mini-button pictures; patches README documents luanti_fixes.
+- 2026-11-20: Tameful pet window (stick), naming, mode buttons, health regen.
+- 2026-11-20: Tameful attitude (passive/defensive/aggressive, range), relax mode with wander, pets no longer hunt on their own.
+- 2026-11-20: Tameful uniform walk speed (3.5 wander / 7 follow), name tags blocked on pets, vanilla-tamed animals join the roster.
+- 2026-11-20: Tameful name/health/owner lines + settings, saddle recipes, babies ignore pet parents, Inventory button, riding in water.
+- 2026-11-20: Tameful striders keep pace out of lava, rabbits hop sooner; full scenario test passes (38/38).
+- 2026-11-20: NoSleep (beds set respawn, no sleeping) and Mob Crate ports for Mineclonia; HQ shortcuts for both.
+- 2026-11-20: Identifiable port (panel for blocks/creatures/players/items, harvest info, crop growth, light, spawnable, villager job, zoom, /idconfig).
+- 2026-11-20: end-of-session plan/backlog written to DEVNOTES.md.
+- 2026-11-20: Conflict Resolution port (PvP on/off, protect other players' pets, protect own pets, /pvp, /cr, HQ button).
+- 2026-11-20: Peace and Quiet port (hides advancement popups per player, hidden by default; /peaceandquiet).
+- 2026-11-24: shared UI library mod (uikit): one dark look for every screen, settings window (/uikit) for background, panels, text color and size.
+- 2026-11-24: all mod screens moved to the shared look; settings checkboxes became On/Off buttons; Tameful, Identifiable, Wave Matrix, HQ, Populations, Conflict Resolution, Mob Crate, No Sleep and Peace and Quiet updated.
