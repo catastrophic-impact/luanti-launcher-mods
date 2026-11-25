@@ -24,7 +24,14 @@ function tameful.mount_speed(ent)
 end
 
 local OVERRIDDEN = { "steer_class", "steer_item", "drive_bonus", "jump_height", "driver_attach_at", "should_drive",
-	"post_apply_driver_input", "apply_driver_input", "expel_underwater_drivers" }
+	"post_apply_driver_input", "apply_driver_input", "expel_underwater_drivers", "driver_scale" }
+
+-- Hand-tuned seats { y, z, rider scale } in 1/10 block (before the parent's visual_size is divided out).
+local SEAT_FIX = {
+	rabbit = { 1.6, -4.5, 0.5 }, -- the ears stick up in front: sit well back
+	cat = { 6, -2, 0.8 }, ocelot = { 6, -2, 0.8 },
+	strider = { 5.1, -1.75, 1, true }, -- true: already in the parent's scaled space -- Mineclonia's own seat; the default one was too low (feet through the face)
+}
 
 local function setup(ent)
 	ent._tameful_orig = {}
@@ -40,7 +47,24 @@ local function setup(ent)
 	-- animals Mineclonia already lets you ride (horse, pig, strider...) keep their own seat
 	local own = ent.driver_attach_at
 	if not own or (own.x == 0 and own.y == 0 and own.z == 0) then
-		ent.driver_attach_at = { x = 0, y = top * 10 * 0.55, z = 0 }
+		-- Seat on the back, a bit behind the middle. Units are 1/10 block, but attachments live in the parent's scaled space
+		-- (polar bear, strider have visual_size > 1): divide by it, and shrink the rider by it so it keeps its normal size.
+		local vs = props.visual_size or { x = 1, y = 1 }
+		local y, z, k = top * 10 * 0.55, 0, 1
+		local short = ent.name:match("^mobs_mc:(.+)$") or ""
+		local fix = SEAT_FIX[short]
+		if fix then
+			y, z, k = fix[1], fix[2], fix[3]
+			if fix[4] then vs = { x = 1, y = 1 } end -- Mineclonia's numbers are not divided by the visual size
+		elseif top < 0.8 then
+			-- small animals: a full-size rider would sit on the head, so shrink the rider
+			y, z, k = top * 10 * 0.7, -top * 10 * 0.2, 0.55
+		elseif top >= 1 then -- cow, sheep, mooshroom, bear: the default seat sank into the body
+			y, z = top * 10 * 0.72, -top * 10 * 0.12
+		end
+		ent.driver_attach_at = { x = 0, y = y / vs.y, z = z / vs.y }
+		local vsr = props.visual_size or { x = 1, y = 1 }
+		ent.driver_scale = { x = k / vsr.x, y = k / vsr.y }
 	end
 	ent._tameful_drive_bonus = ent.drive_bonus
 	ent._tameful_riding = true

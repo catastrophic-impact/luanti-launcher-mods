@@ -108,6 +108,4 @@ core.register_chatcommand("idblacklist", {
 
 if core.get_modpath("hq") then
 	hq.register_shortcut({ id = "identifiable", name = "Identifiable", command = "idconfig", icon = "mcl_compass:compass", short = "ID" })
-	hq.register_shortcut({ id = "identifiable_hide", name = "Identifiable: hide/show panel", command = "idhide", short = "IH" })
-	hq.register_shortcut({ id = "identifiable_blacklist", name = "Identifiable: hide what I look at", command = "idblacklist", short = "IB" })
 end
