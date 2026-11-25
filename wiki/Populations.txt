@@ -31,6 +31,11 @@ Families
 - If one partner dies, the other may start a new family.
 - A zombified and cured villager is still the same person.
 
+Gathering
+- At most 6 villagers walk to a bell at the same time; the others pace around the
+  village. Villagers also push each other apart a little so they do not stand
+  inside one another.
+
 Health and fighting
 - Adults have 40 health, children 20. Everyone heals 1 health every 2 seconds
   after 10 seconds out of combat.

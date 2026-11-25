@@ -36,10 +36,12 @@ end
 ----------------------------------------------------------------------------------
 local function apply_health(self)
 	local want = hp_max(self)
-	local props = self.object:get_properties()
-	local old = props and props.hp_max or 20
+	-- The engine's hp_max property does not read back reliably; remember the applied value on the entity
+	-- (serialized with it). Reading it back doubled health every second (20 -> 1280).
+	local old = self._pop_hp_max or 20
 	if old == want then return end
-	local fraction = (self.health or old) / old
+	local fraction = math.min(1, (self.health or old) / old)
+	self._pop_hp_max = want
 	self.object:set_properties({ hp_max = want })
 	self.health = math.max(1, fraction * want)
 end
@@ -299,7 +301,7 @@ core.register_globalstep(function(dtime)
 			if beat % 2 == 0 then
 				local st = state[ent]
 				if (not st or t - st.last_hurt >= MEMORY) then
-					local max = ent.object:get_properties().hp_max
+					local max = ent._pop_hp_max or 20
 					if ent.health and ent.health < max then ent:heal_mob(1, max) end
 				end
 			end

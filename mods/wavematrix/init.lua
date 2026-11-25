@@ -199,7 +199,7 @@ core.register_globalstep(function(dtime)
 				if c.continuous then
 					wavematrix.next(name)
 				else
-					st.wait_until = t + math.random(180, 480) -- Immersion "Natural": a pause like the game's own music
+					st.wait_from, st.wait_until = t, t + math.random(180, 480) -- Immersion "Natural": a pause like the game's own music
 				end
 			elseif not st.handle and st.wait_until and t >= st.wait_until then
 				st.wait_until = nil
@@ -214,7 +214,7 @@ core.register_on_joinplayer(function(player)
 	states[name] = { sent = {}, token = 0 }
 	local c = wavematrix.cfg(name)
 	prune_favorites(c)
-	if not c.stopped then states[name].wait_until = now() + 5 end -- a few seconds after arriving
+	if not c.stopped then states[name].wait_from, states[name].wait_until = now(), now() + 5 end -- a few seconds after arriving
 end)
 core.register_on_leaveplayer(function(player)
 	local name = player:get_player_name()

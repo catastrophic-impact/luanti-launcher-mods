@@ -22,7 +22,8 @@ local function quick_rows(player)
 	if #r2 > 0 then rows[#rows + 1] = r2 end
 	if has("server") then
 		local gm = rawget(_G, "mcl_gamemode") and mcl_gamemode.get_gamemode(player) or "survival"
-		local r3 = { { gm == "creative" and S("To survival") or S("To creative"), "gamemode " .. (gm == "creative" and "survival" or "creative") } }
+		-- Creative = Mineclonia's creative game mode plus the fly and fast privileges (what /grant <name> fly,fast does); off takes all three away.
+		local r3 = { { gm == "creative" and S("Creative: on") or S("Creative: off"), nil, nil, hq.toggle_creative } }
 		local function toggle(label, effect, cmd_on)
 			local on = rawget(_G, "mcl_potions") and mcl_potions.has_effect and mcl_potions.has_effect(player, effect)
 			r3[#r3 + 1] = { label .. (on and S(": on") or S(": off")), on and ("effect remove " .. effect) or cmd_on }
@@ -152,7 +153,7 @@ core.register_on_player_receive_fields(function(player, formname, fields)
 	for ri, row in ipairs(rows) do
 		for i, b in ipairs(row) do
 			if fields["q_" .. ri .. "_" .. i] then
-				if b[3] then hq.find_village(player, b[3]) else hq.run_command(player, b[2]) end
+				if b[4] then b[4](player) elseif b[3] then hq.find_village(player, b[3]) else hq.run_command(player, b[2]) end
 			end
 		end
 	end

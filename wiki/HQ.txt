@@ -17,7 +17,9 @@ HQ screen
 - A list of the mods that registered a shortcut. Each one has a star that puts
   a mini button for it in your inventory.
 - Quick buttons, shown only if you have the privilege the command needs:
-  time (Day, Noon, Dusk, Night), weather (Clear, Rain, Thunder), game mode,
+  time (Day, Noon, Dusk, Night), weather (Clear, Rain, Thunder), Creative on/off (game mode plus fly and fast; off
+  takes them away again; in a world that is creative for everyone only fly and
+  fast change),
   night vision and speed.
 - Your own shortcuts: add, edit, delete and run any command with a name. They
   only work with the privileges that command needs, exactly as if you typed it.

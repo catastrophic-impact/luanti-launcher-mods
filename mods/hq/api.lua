@@ -142,3 +142,20 @@ core.register_chatcommand("hq", {
 		return false, S("No shortcut called @1.", param)
 	end,
 })
+
+-- Creative on/off for the player: game mode + fly + fast. In a world that is creative for everyone the game mode stays creative
+-- (Mineclonia), but fly and fast are still granted/taken here.
+function hq.toggle_creative(player)
+	local name = player:get_player_name()
+	if not core.check_player_privs(name, { server = true }) then return end
+	local want_on = not (rawget(_G, "mcl_gamemode") and mcl_gamemode.get_gamemode(player) == "creative")
+	if rawget(_G, "mcl_gamemode") then mcl_gamemode.set_gamemode(player, want_on and "creative" or "survival") end
+	local privs = core.get_player_privs(name)
+	privs.fly, privs.fast = want_on or nil, want_on or nil
+	core.set_player_privs(name, privs)
+	if not want_on and rawget(_G, "mcl_gamemode") and mcl_gamemode.get_gamemode(player) == "creative" then
+		hq.msg(name, "Creative off: fly and fast removed (this world is creative for everyone, so the game mode stays).")
+	else
+		hq.msg(name, want_on and "Creative on: fly and fast granted." or "Creative off: fly and fast removed.")
+	end
+end

@@ -115,3 +115,9 @@ select option { background: #101826; }
 .pkg .thumb.none { display: block; }
 
 .mod .btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex-shrink: 0; }
+
+.tab[hidden] { display: none; }
+.cat { margin-bottom: 14px; }
+.cathead { align-items: center; margin: 14px 0 6px; }
+.cathead h3 { margin: 0; }
+.catsel { margin-top: 8px; font-size: 12px; padding: 3px 6px; }

@@ -122,3 +122,29 @@ test('mods source: configured wins, else a mods folder next to the launcher', ()
   assert.deepStrictEqual(config.resolveModsSource({ modsSource: '' }, base), { path: path.join(base, 'mods'), auto: true });
   assert.deepStrictEqual(config.resolveModsSource({ modsSource: '/x' }, base), { path: '/x', auto: false });
 });
+
+test('filter: blocks by whole word, not by substring', () => {
+  const { blockedBy } = require('../src/filter');
+  assert.ok(blockedBy({ name: 'pride_flags', title: 'Pride Flags' }));
+  assert.ok(blockedBy({ name: 'x', description: 'A NSFW pack' }));
+  assert.ok(blockedBy({ name: 'x', tags: ['LGBTQ'] }));
+  assert.strictEqual(blockedBy({ name: 'sussex_castles', title: 'Transport and transforms', description: 'Proud of essex' }), '');
+});
+
+test('categories: built-in groups, assign, rename, delete', () => {
+  const categories = require('../src/categories');
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'll-cat-'));
+  fs.mkdirSync(path.join(data, 'mods'));
+  fs.writeFileSync(path.join(data, 'mods', '.launcher-managed.json'), JSON.stringify(['ours']));
+  let o = categories.overview(data, ['ours', 'theirs']);
+  assert.deepStrictEqual([o.of.ours, o.of.theirs], [categories.OURS, categories.OTHER]);
+  categories.add(data, 'Survival');
+  assert.throws(() => categories.add(data, 'Survival'), /exists/);
+  assert.throws(() => categories.add(data, categories.OTHER), /built-in/);
+  categories.assign(data, 'theirs', 'Survival');
+  assert.strictEqual(categories.overview(data, ['theirs']).of.theirs, 'Survival');
+  categories.rename(data, 'Survival', 'Hard');
+  assert.strictEqual(categories.overview(data, ['theirs']).of.theirs, 'Hard');
+  categories.remove(data, 'Hard');
+  assert.strictEqual(categories.overview(data, ['theirs']).of.theirs, categories.OTHER);
+});

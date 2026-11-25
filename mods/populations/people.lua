@@ -150,7 +150,7 @@ local function refresh_tag(self)
 	local job = job_of(self)
 	if job then lines[#lines + 1] = job end
 	local props = self.object:get_properties()
-	local max = props and props.hp_max or 20
+	local max = self._pop_hp_max or (props and props.hp_max) or 20
 	lines[#lines + 1] = string.format("%d/%d", math.ceil(self.health or max), math.ceil(max))
 	local tag = center_lines(lines)
 	-- Luanti draws name tags at any distance; the spec says 32 blocks: hide the tag while no player is that close.

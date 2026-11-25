@@ -6,7 +6,7 @@ id.defaults = {
 	enabled = true, show_id = true, show_mod_name = true, show_icon = true, show_health = true, show_armor = true,
 	show_player_health = false, show_block_details = true, show_harvest = true, light_mode = "off", show_spawnable = false,
 	show_villager = true, show_items = true, show_spawner = true, show_breaking = true, text_align = "left",
-	hud_x = 0.2, hud_y = 0.05, align = "manual", hud_color = "white", text_size = "normal", background_style = "dark", range = 5,
+	hud_x = 0.2, hud_y = 0.01, align = "center", hud_color = "white", text_size = "normal", background_style = "dark", range = 5,
 	hidden = {},
 }
 id.COLORS = {

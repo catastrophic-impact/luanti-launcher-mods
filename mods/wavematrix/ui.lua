@@ -78,14 +78,17 @@ local function formspec(name)
 	-- now playing
 	local song = st.id and wavematrix.by_id[st.id]
 	local line, frac, timetxt = S("Nothing playing"), 0, ""
+	local barcol = "#7CFC7C"
+	local WAITCOL = "#6FA8DC" -- the pause between songs fills in blue, so the bar always moves
+	local function waitfrac(s, t) return s.wait_from and s.wait_until > s.wait_from and (t - s.wait_from) / (s.wait_until - s.wait_from) or 0 end
 	local now = core.get_us_time() / 1e6
 	if song then
 		line = song.name
 		local e = wavematrix.elapsed(name)
 		if st.pending then timetxt = S("Loading…")
 		elseif e then frac = e / st.length; timetxt = mmss(e) .. " / " .. mmss(st.length)
-		elseif st.wait_until then timetxt = S("Next song in @1", mmss(st.wait_until - now)) end
-	elseif st.wait_until then timetxt = S("Starts in @1", mmss(st.wait_until - now))
+		elseif st.wait_until then timetxt = S("Next song in @1", mmss(st.wait_until - now)); frac, barcol = waitfrac(st, now), WAITCOL end
+	elseif st.wait_until then timetxt = S("Starts in @1", mmss(st.wait_until - now)); frac, barcol = waitfrac(st, now), WAITCOL
 	elseif c.stopped then timetxt = S("Stopped") end
 	local sel = u.sel and wavematrix.by_id[u.sel]
 	local favtxt = (sel and wavematrix.is_favorite(name, sel.id)) and S("★ Remove favorite") or S("☆ Make favorite")
@@ -120,7 +123,7 @@ local function formspec(name)
 		"label[", RX, ",1.8;", esc(S("Now playing")), "]",
 		"label[", RX, ",2.3;", esc(line), "]",
 		"box[", RX, ",2.6;", RW, ",0.22;#00000090]",
-		"box[", RX, ",2.6;", string.format("%.2f", math.max(0.001, RW * math.min(frac, 1))), ",0.22;#7CFC7C]",
+		"box[", RX, ",2.6;", string.format("%.2f", math.max(0.001, RW * math.min(frac, 1))), ",0.22;", barcol, "]",
 		"label[", RX, ",3.1;", esc(timetxt), "]",
 		string.format("button[%.2f,3.45;%.2f,%.2f;play;%s]", tc[1].x, tc[1].w, H, esc(S("Play"))),
 		string.format("button[%.2f,3.45;%.2f,%.2f;stop;%s]", tc[2].x, tc[2].w, H, esc(S("Stop"))),

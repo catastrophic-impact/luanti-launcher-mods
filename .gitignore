@@ -7,3 +7,4 @@ node_modules/
 launcher/dist/
 launcher/assets/background.jpg
 tui_launcher/luanti-launcher-linux-*
+release/

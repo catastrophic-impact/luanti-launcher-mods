@@ -29,6 +29,7 @@ uikit.options = {
 		order = { "white", "soft", "warm" } },
 	{ key = "size", label = "Text size", default = "normal", choices = {
 		small = { name = "Small", size = "-2" }, normal = { name = "Normal" }, large = { name = "Large", size = "+3" } }, order = { "small", "normal", "large" } },
+	{ key = "stock", label = "Other mods' screens", default = "on", choices = { on = { name = "Styled" }, off = { name = "Original" } }, order = { "on", "off" } },
 }
 local by_key = {}
 for _, o in ipairs(uikit.options) do by_key[o.key] = o end
@@ -48,6 +49,7 @@ function uikit.set(player, key, value)
 	if not (o and o.choices[value]) then return false end
 	local s = uikit.get(player); s[key] = value
 	player:get_meta():set_string("uikit:settings", core.serialize(s))
+	uikit.apply_prepend(player)
 	return true
 end
 function uikit.cycle(player, key)
@@ -170,3 +172,29 @@ uikit.row_h, uikit.gap = 0.75, 0.15 -- standard control height and spacing
 
 dofile(path .. "/screens.lua")
 dofile(path .. "/settings.lua")
+
+-- Screens drawn by other mods and the game (formspecs without no_prepend[]) get our button/field/label styles through the player's formspec
+-- prepend: no redrawing, no layout change, just the look. A screen's own style[] still wins. Turn off with the "Other mods' screens" option.
+local added = {} -- the block we put into each player's prepend, so it can be replaced
+function uikit.apply_prepend(player)
+	local name = player:get_player_name()
+	local cur = player:get_formspec_prepend() or ""
+	local old = added[name]
+	if old and old ~= "" and cur:sub(-#old) == old then cur = cur:sub(1, #cur - #old) end
+	local s = uikit.get(player)
+	-- our dark panel replaces the game's light window frame (white text needs it); fields keep their engine border so they stay visible
+	local add = ""
+	if s.stock == "on" then
+		add = string.format("background9[1,1;1,1;%s;true;2]", T.tex.panel.solid) .. uikit.styles(s)
+			.. "style_type[field;border=true;bgcolor=#101010]style_type[pwdfield;border=true;bgcolor=#101010]style_type[textarea;border=true;bgcolor=#101010]"
+	end
+	added[name] = add
+	player:set_formspec_prepend(cur .. add)
+end
+core.register_on_joinplayer(function(player)
+	local name = player:get_player_name()
+	added[name] = nil
+	-- the game sets its own prepend on join; add ours after it
+	core.after(0.5, function() local p = core.get_player_by_name(name); if p then uikit.apply_prepend(p) end end)
+end)
+core.register_on_leaveplayer(function(player) added[player:get_player_name()] = nil end)

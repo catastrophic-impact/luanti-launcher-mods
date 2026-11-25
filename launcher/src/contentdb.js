@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { readZip, writeEntries } = require('./archive');
 const { loadRecords, saveRecords, hashDir } = require('./records');
 const worlds = require('./worlds');
+const { blockedBy } = require('./filter');
 
 const BASE = 'https://content.luanti.org';
 const TYPES = { mod: 'mods', game: 'games', txp: 'textures' }; // type -> folder in the Luanti data dir
@@ -15,8 +16,10 @@ async function search(net, q, type) {
   if (!TYPES[type]) throw new Error('Unknown package type');
   const url = `${BASE}/api/packages/?type=${type}&limit=40&q=${encodeURIComponent((q || '').slice(0, 100))}`;
   const list = await net.json(url);
-  const items = list.map((p) => ({ author: p.author, name: p.name, title: p.title || p.name, description: p.short_description || '', type: p.type, release: p.release, thumbUrl: p.thumbnail || '' }))
-    .filter((p) => nameOk(p.author) && nameOk(p.name) && TYPES[p.type]);
+  const items = list.map((p) => ({ author: p.author, name: p.name, title: p.title || p.name, description: p.short_description || '', type: p.type, release: p.release, thumbUrl: p.thumbnail || '', tags: Array.isArray(p.tags) ? p.tags.map(String) : [] }))
+    .filter((p) => nameOk(p.author) && nameOk(p.name) && TYPES[p.type])
+    .filter((p) => !blockedBy(p)); // content filter, always on (filter.js)
+  for (const p of items) delete p.tags;
   await addThumbs(net, items);
   return items;
 }
@@ -46,6 +49,11 @@ async function addThumbs(net, items) {
   await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
 }
 
+// "Hello, are you there?": one tiny request, only used to decide whether the ContentDB tab is shown.
+async function reachable(net) {
+  try { await net.json(`${BASE}/api/packages/?limit=1`, { timeoutMs: 6000 }); return true; } catch { return false; }
+}
+
 async function latestRelease(net, author, name) {
   const rels = await net.json(`${BASE}/api/packages/${author}/${name}/releases/`);
   if (!Array.isArray(rels) || !rels.length) throw new Error(`${author}/${name} has no releases`);
@@ -67,6 +75,7 @@ function packageItems(entries) {
 
 async function install(net, dataDir, p, force) {
   if (!nameOk(p.author) || !nameOk(p.name) || !TYPES[p.type]) throw new Error('Bad package');
+  if (blockedBy({ name: p.name })) throw new Error('This package is blocked by the content filter.');
   const key = keyOf(p.type, p.name);
   const target = path.join(dataDir, TYPES[p.type], p.name);
   const rec = loadRecords(dataDir);
@@ -121,4 +130,4 @@ function missingDeps(dataDir, name) {
   return me ? me.depends.filter((d) => !have.has(d)) : [];
 }
 
-module.exports = { missingDeps, BASE, TYPES, search, latestRelease, install, installed, checkUpdates, packageItems };
+module.exports = { reachable, missingDeps, BASE, TYPES, search, latestRelease, install, installed, checkUpdates, packageItems };

@@ -6,7 +6,7 @@ Mods for Luanti games (built on Mineclonia) and a portable launcher to manage th
 - `mods/` - the mods. Each folder is one mod with its own `mod.conf` and a `version` line.
   - `uikit` is the shared UI library; every other mod depends on it.
   - `hq`, `tameful`, `populations`, `identifiable`, `mobcrate`, `nosleep`, `conflictresolution`, `peaceandquiet`, `wavematrix`, `luanti_fixes`.
-- `launcher/` - the Luanti Launcher (Electron): per-world mod toggles, sync, music/skin folders, an Updates tab that
+- `launcher/` - the Luanti Launcher (Electron): per-world mod toggles with categories, music/skin folders, an Updates tab that
   reads `mods/` of this repository, and a ContentDB tab. It only goes online when you press a button.
 - `wiki/` - one plain-text page per mod (features, commands, settings).
 - `tools/`, `tests/` - developer tooling and test mods (`tools/lt`).
@@ -27,3 +27,6 @@ npm start
 
 ## License
 GPL-3.0-or-later, with exceptions (music, one texture, MIT code from Twinsonian's mods). See `CREDITS.md` and `LICENSE`.
+
+## Build
+`./install.sh` creates a distrobox (own home `~/boxes/luanti-box`), builds the launcher AppImage and collects a portable `release/` folder (AppImage + `mods/`). Needs distrobox and podman.

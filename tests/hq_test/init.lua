@@ -16,6 +16,16 @@ core.register_on_joinplayer(function(player)
 		-- quick button via the screen's fields: row 1 button 1 = Day (6000)
 		deliver(player, "hq:main", { q_1_1 = "x" })
 		check("quick button Day", math.abs(core.get_timeofday() - 0.25) < 0.05, tostring(core.get_timeofday()))
+		-- creative toggle (row 3 button 1): game mode + fly + fast
+		local function has(p_) return core.check_player_privs("tester", { [p_] = true }) end
+		local before = mcl_gamemode.get_gamemode(player)
+		deliver(player, "hq:main", { q_3_1 = "x" })
+		local on = mcl_gamemode.get_gamemode(player)
+		check("creative toggle flips the game mode", on ~= before, before .. " -> " .. on)
+		check("creative on grants fly+fast", on ~= "creative" or (has("fly") and has("fast")))
+		deliver(player, "hq:main", { q_3_1 = "x" })
+		check("second press flips back", mcl_gamemode.get_gamemode(player) == before)
+		check("survival side: fly and fast match state", (before == "creative") == (has("fly") and has("fast")) and (before == "creative" or not (has("fly") or has("fast"))))
 		-- own shortcuts
 		check("add own ok", hq.add_own(player, "dayzero", "/time 0") == true)
 		check("add own duplicate refused", hq.add_own(player, "dayzero", "time 1") == false)

@@ -85,17 +85,17 @@ function newWorldDialog() {
   const game = h('select', {}, st.games.map((g) => h('option', { value: g.id }, g.title)));
   const type = h('select', {}, h('option', { value: 'default' }, 'Default'), h('option', { value: 'flat' }, 'Flat (for testing and building)'));
   const creative = h('input', { type: 'checkbox' });
-  const mods = h('input', { type: 'checkbox', checked: true });
+  const cat = h('select', {}, h('option', { value: '' }, 'No mods (add them later in the Mods tab)'), st.cats.map((c) => h('option', { value: c }, `Everything in "${c}"`)));
   const field = (label, el) => h('div', { class: 'field' }, h('label', {}, label), el);
   const check = (el, text) => h('label', { class: 'check' }, el, ' ', text);
   const m = modal('New world', h('div', {},
     field('Name', name), field('Game', game), field('World type', type),
     h('div', { class: 'field' }, check(creative, 'Creative mode')),
-    h('div', { class: 'field' }, check(mods, 'Switch on all installed mods'))),
+    field('Start with mods', cat)),
   (close) => [
     h('button', { class: 'btn', onclick: close }, 'Cancel'),
     h('button', { class: 'btn primary', onclick: async () => {
-      const r = await run(() => api.createWorld({ name: name.value, gameid: game.value, flat: type.value === 'flat', creative: creative.checked, mods: mods.checked ? 'all' : 'none' }), (w) => `Created "${w.name}"`);
+      const r = await run(() => api.createWorld({ name: name.value, gameid: game.value, flat: type.value === 'flat', creative: creative.checked, category: cat.value }), (w) => `Created "${w.name}"`);
       if (r) { close(); await refresh(); S.world = r.path; renderPlay(); }
     } }, 'Create')]);
   name.focus();
@@ -122,43 +122,90 @@ function deleteWorldDialog(w) {
 async function renderMods() {
   const st = S.st;
   if (!st.worlds.length) return view.replaceChildren(h('div', { class: 'empty' }, 'No worlds found.'));
-  const mods = await run(() => api.mods(S.world)) || [];
+  const data = await run(() => api.mods(S.world)) || { categories: [], builtin: [], mods: [] };
+  const mods = data.mods;
   let filter = '';
-  const grid = h('div', { class: 'grid' });
+  const body = h('div', {});
   const count = h('span', { class: 'sub', style: 'margin:0' });
+  const reload = async () => { const top = view.scrollTop; await renderMods(); view.scrollTop = top; };
+  const setAll = (on, cat) => async () => {
+    const r = await run(() => api.setAllMods(S.world, on, cat || ''));
+    if (r && r.pulled.length) toast('Also switched on (needed): ' + r.pulled.join(', '));
+    if (r && r.missing.length) toast('Missing mods: ' + r.missing.map((x) => `${x.dep} (needed by ${x.mod})`).join(', '), true);
+    reload();
+  };
+  const modRow = (m) => {
+    const info = h('div', { class: 'mi' }, h('span', { class: 'mn' }, m.name));
+    if (m.description) info.append(h('div', { class: 'md' }, m.description));
+    const tags = h('div', { class: 'tags' });
+    if (m.name === 'wm_music') tags.append(h('span', { class: 'tag data' }, 'music folder (shared)'));
+    if (m.depends.length) tags.append(h('span', { class: 'tag' }, 'needs ' + m.depends.join(', ')));
+    if (m.missing.length) tags.append(h('span', { class: 'tag bad' }, 'missing: ' + m.missing.join(', ')));
+    if (tags.childNodes.length) info.append(tags);
+    const move = h('select', { class: 'catsel', title: 'Move to category', onclick: (e) => e.stopPropagation(), onchange: async (e) => { e.stopPropagation(); await run(() => api.catAssign(m.name, e.target.value)); reload(); } },
+      data.categories.map((c) => h('option', { value: c, selected: c === m.category }, c)));
+    info.append(move);
+    const el = h('div', { class: 'mod' + (m.enabled ? ' on' : '') + (m.missing.length ? ' warn' : '') }, h('div', { class: 'sw' }), info);
+    el.addEventListener('click', async () => {
+      const want = !m.enabled;
+      const r = await run(() => api.setMod(S.world, m.name, want));
+      if (!r) return;
+      if (r.changed.length) toast(`${want ? 'Also switched on' : 'Also switched off'}: ${r.changed.join(', ')}`);
+      if (r.missing.length) toast('Missing mods: ' + r.missing.map((x) => `${x.dep} (needed by ${x.mod})`).join(', '), true);
+      reload();
+    });
+    return el;
+  };
   const draw = () => {
-    grid.replaceChildren();
-    for (const m of mods.filter((x) => x.name.toLowerCase().includes(filter) || (x.description || '').toLowerCase().includes(filter))) {
-      const info = h('div', { class: 'mi' }, h('span', { class: 'mn' }, m.name));
-      if (m.description) info.append(h('div', { class: 'md' }, m.description));
-      const tags = h('div', { class: 'tags' });
-      if (m.name === 'wm_music') tags.append(h('span', { class: 'tag data' }, 'music folder (shared)'));
-      if (m.depends.length) tags.append(h('span', { class: 'tag' }, 'needs ' + m.depends.join(', ')));
-      if (m.missing.length) tags.append(h('span', { class: 'tag bad' }, 'missing: ' + m.missing.join(', ')));
-      if (tags.childNodes.length) info.append(tags);
-      const el = h('div', { class: 'mod' + (m.enabled ? ' on' : '') + (m.missing.length ? ' warn' : '') }, h('div', { class: 'sw' }), info);
-      el.addEventListener('click', async () => {
-        const top = view.scrollTop;
-        const want = !m.enabled;
-        const r = await run(() => api.setMod(S.world, m.name, want));
-        if (!r) return;
-        if (r.changed.length) toast(`${want ? 'Also switched on' : 'Also switched off'}: ${r.changed.join(', ')}`);
-        if (r.missing.length) toast('Missing mods: ' + r.missing.map((x) => `${x.dep} (needed by ${x.mod})`).join(', '), true);
-        await renderMods();
-        view.scrollTop = top;
-      });
-      grid.append(el);
+    body.replaceChildren();
+    const shown = mods.filter((x) => x.name.toLowerCase().includes(filter) || (x.description || '').toLowerCase().includes(filter));
+    for (const c of data.categories) {
+      const all = mods.filter((m) => m.category === c);
+      const list = shown.filter((m) => m.category === c);
+      if (!all.length && data.builtin.includes(c)) continue; // empty built-in groups stay hidden
+      if (filter && !list.length) continue;
+      const own = !data.builtin.includes(c);
+      const on = all.filter((m) => m.enabled).length;
+      const grid = h('div', { class: 'grid' }, list.map(modRow));
+      body.append(h('div', { class: 'cat' },
+        h('div', { class: 'row cathead' }, h('h3', {}, c), h('span', { class: 'hint' }, `${on} of ${all.length} on`), h('span', { class: 'spacer' }),
+          own ? h('button', { class: 'btn small', onclick: () => renameCatDialog(c, reload) }, 'Rename') : null,
+          own ? h('button', { class: 'btn small', onclick: async () => { await run(() => api.catRemove(c)); reload(); } }, 'Delete') : null,
+          h('button', { class: 'btn small', disabled: !all.length, onclick: setAll(false, c) }, 'Disable all'),
+          h('button', { class: 'btn small primary', disabled: !all.length, onclick: setAll(true, c) }, 'Enable all')),
+        all.length ? grid : h('div', { class: 'hint', style: 'margin:4px 0 10px' }, 'Empty. Use the menu on any mod to move it here.')));
     }
     count.textContent = `${mods.filter((x) => x.enabled).length} of ${mods.length} enabled`;
   };
   draw();
-  const all = (on) => async () => { await run(() => api.setAllMods(S.world, on)); renderMods(); };
   view.replaceChildren(
     h('h2', {}, 'Mods in this world'),
-    h('p', { class: 'sub' }, 'Switch mods on or off for this world only. Changes are saved straight away.'),
+    h('p', { class: 'sub' }, 'The list shows what is switched on for the selected world (new worlds start with nothing on). Group mods into categories, e.g. "Survival", and switch a whole category on with one button. Changes are saved straight away.'),
     h('div', { class: 'row' }, worldSelect(renderMods), h('input', { type: 'text', placeholder: 'Search mods...', oninput: (e) => { filter = e.target.value.toLowerCase(); draw(); } }),
-      h('span', { class: 'spacer' }), count, h('button', { class: 'btn small', onclick: all(true) }, 'Enable all'), h('button', { class: 'btn small', onclick: all(false) }, 'Disable all')),
-    mods.length ? grid : h('div', { class: 'empty', style: 'margin-top:14px' }, 'No mods installed yet. Open the Sync tab to copy your mods in.'));
+      h('span', { class: 'spacer' }), count),
+    h('div', { class: 'row', style: 'margin-bottom:6px' },
+      h('button', { class: 'btn small', onclick: () => newCatDialog(reload) }, '＋ New category'),
+      h('button', { class: 'btn small', onclick: () => run(() => api.openModsFolder()) }, 'Open mods folder'),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'btn small', onclick: setAll(false) }, 'Disable all'), h('button', { class: 'btn small', onclick: setAll(true) }, 'Enable all')),
+    mods.length ? body : h('div', { class: 'empty', style: 'margin-top:14px' }, 'No mods installed yet. Install ours in the Updates tab, or open the mods folder to add your own.'));
+}
+
+function newCatDialog(after) {
+  const name = h('input', { type: 'text', placeholder: 'Survival', maxlength: '40' });
+  const m = modal('New category', h('div', { class: 'field' }, h('label', {}, 'Name'), name),
+    (close) => [h('button', { class: 'btn', onclick: close }, 'Cancel'),
+      h('button', { class: 'btn primary', onclick: async () => { const r = await run(() => api.catAdd(name.value)); if (r) { close(); after(); } } }, 'Create')]);
+  name.focus();
+  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') m.card.querySelector('.btn.primary').click(); });
+}
+function renameCatDialog(old, after) {
+  const name = h('input', { type: 'text', value: old, maxlength: '40' });
+  const m = modal('Rename category', h('div', { class: 'field' }, h('label', {}, 'Name'), name),
+    (close) => [h('button', { class: 'btn', onclick: close }, 'Cancel'),
+      h('button', { class: 'btn primary', onclick: async () => { const r = await run(() => api.catRename(old, name.value)); if (r !== undefined) { close(); after(); } } }, 'Rename')]);
+  name.focus();
+  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') m.card.querySelector('.btn.primary').click(); });
 }
 
 // ---- Updates (our repo) -----------------------------------------------------------------------
@@ -300,23 +347,6 @@ async function renderFolders() {
     worldSelect(renderFolders), h('div', { style: 'height:14px' }), ...cards);
 }
 
-async function renderSync() {
-  const st = S.st;
-  const src = st.modsSource.path;
-  const out = h('div', { class: 'paths', style: 'margin-top:12px' });
-  view.replaceChildren(h('h2', {}, 'Sync mods'),
-    h('p', { class: 'sub' }, 'Copies your mods into Luanti. Only mods this launcher installed are ever removed.'),
-    h('div', { class: 'card' },
-      h('div', { class: 'hint' }, 'From'), h('div', { class: 'paths' }, src ? src + (st.modsSource.auto ? '   (the mods folder next to the launcher)' : '') : '(not set: Settings, or put a "mods" folder next to the launcher)'),
-      h('div', { class: 'hint', style: 'margin-top:10px' }, 'To'), h('div', { class: 'paths' }, st.install ? st.install.dataDir + '/mods' : '(Luanti not found)'), out),
-    h('button', { class: 'btn primary big', disabled: !src || !st.install, onclick: async (e) => {
-      e.target.disabled = true;
-      const r = await run(() => api.sync(), (m) => m);
-      if (r) out.textContent = r;
-      e.target.disabled = false;
-    } }, 'Sync now'));
-}
-
 async function renderSettings() {
   const st = S.st;
   const vals = { ...st.cfg };
@@ -329,18 +359,17 @@ async function renderSettings() {
   const inst = st.install;
   view.replaceChildren(h('h2', {}, 'Settings'),
     h('p', { class: 'sub' }, inst ? `Detected: ${inst.kind} (${inst.cmd.join(' ')})` : 'Luanti was not detected. Set the launch command or data folder below.'),
-    field('modsSource', 'Mods source folder', st.modsSource.auto ? 'Empty = the "mods" folder next to the launcher (in use now). The Sync tab copies from here.' : 'The folder whose subfolders are your mods (the Sync tab copies from here). Empty = a "mods" folder next to the launcher.', true),
     field('dataDir', 'Luanti data folder', 'Leave empty to detect automatically.', true),
     field('command', 'Launch command', 'Leave empty to detect automatically (flatpak or luanti in PATH).', false),
     field('repoUrl', 'Project repository (GitHub)', 'Where the Updates tab looks for our mods: https://github.com/<owner>/<repo> (mods in its mods/ folder). Nothing is contacted until you press Check for updates.', false),
     field('repoBranch', 'Repository branch', 'Usually main.', false),
-    field('gameSource', 'Game source folder (optional)', 'A game (like Mineclonia) to copy into the Luanti games folder during Sync.', true),
+    h('div', { class: 'row', style: 'margin-bottom:14px' }, h('button', { class: 'btn small', onclick: () => run(() => api.openModsFolder()) }, 'Open mods folder')),
     h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: async () => {
       const ns = await run(() => api.saveSettings(vals), 'Saved'); if (ns) { S.st = ns; await refresh(); renderSettings(); } } }, 'Save settings'),
       h('span', { class: 'hint' }, 'Stored in ', h('span', { class: 'paths' }, st.configDir), ' (next to the launcher; nothing is written anywhere else).')));
 }
 
-const RENDER = { play: renderPlay, mods: renderMods, updates: renderUpdates, contentdb: renderContentDB, folders: renderFolders, sync: renderSync, settings: renderSettings };
+const RENDER = { play: renderPlay, mods: renderMods, updates: renderUpdates, contentdb: renderContentDB, folders: renderFolders, settings: renderSettings };
 async function show(tab) {
   S.tab = tab;
   for (const b of document.querySelectorAll('.tab')) b.classList.toggle('active', b.dataset.tab === tab);
@@ -349,3 +378,5 @@ async function show(tab) {
 }
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) show(b.dataset.tab); });
 show('play');
+// "Hello, are you there?": the ContentDB tab only appears when content.luanti.org answers (one tiny request at start).
+api.cdbReachable().then((ok) => { if (ok) document.querySelector('[data-tab="contentdb"]').hidden = false; }).catch(() => {});

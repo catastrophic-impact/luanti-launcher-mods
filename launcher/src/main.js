@@ -11,6 +11,7 @@ const { listWorlds, WorldMT, listMods } = worlds;
 const sync = require('./sync');
 const updates = require('./updates');
 const contentdb = require('./contentdb');
+const categories = require('./categories');
 const net = require('./net');
 
 let dataDir; // launcher-data folder (portable)
@@ -33,6 +34,7 @@ function state() {
     folders: sync.FOLDERS,
     modsSource: config.resolveModsSource(cfg, portable.launcherDir(app)),
     games: inst ? worlds.listGames(inst.dataDir) : [],
+    cats: inst ? categories.overview(inst.dataDir, []).categories : [],
   };
 }
 
@@ -62,11 +64,13 @@ handle('mods', (worldPath) => {
   const infos = worlds.listModsInfo(st.install.dataDir);
   const names = new Set(infos.map((m) => m.name));
   const game = worlds.gameModNames(st.install.dataDir, mt.get('gameid'));
-  return infos.map((m) => ({
+  const cats = categories.overview(st.install.dataDir, infos.map((m) => m.name));
+  return { categories: cats.categories, builtin: cats.builtin, mods: infos.map((m) => ({
     name: m.name, description: m.description, depends: m.depends, optional: m.optional,
+    category: cats.of[m.name],
     enabled: mt.modEnabled(m.name),
     missing: m.depends.filter((d) => !names.has(d) && !game.has(d)),
-  }));
+  })) };
 });
 // Enabling a mod also enables the mods it requires; disabling one also disables the enabled mods that require it.
 handle('setMod', (worldPath, name, enabled) => {
@@ -88,12 +92,40 @@ handle('setMod', (worldPath, name, enabled) => {
   mt.save();
   return { changed, missing };
 });
-handle('setAllMods', (worldPath, enabled) => {
+// Switch a whole category (or every mod when cat is empty) on or off; switching on pulls in what the mods need.
+handle('setAllMods', (worldPath, enabled, cat) => {
   const st = state();
   const mt = WorldMT.read(worldByPath(worldPath).path);
-  for (const n of listMods(st.install.dataDir)) mt.set('load_mod_' + n, enabled ? 'true' : 'false');
+  const infos = worlds.listModsInfo(st.install.dataDir);
+  const of = categories.overview(st.install.dataDir, infos.map((m) => m.name)).of;
+  const game = worlds.gameModNames(st.install.dataDir, mt.get('gameid'));
+  const pick = infos.filter((m) => !cat || of[m.name] === cat).map((m) => m.name);
+  const missing = [];
+  const pulled = new Set();
+  for (const n of pick) {
+    if (enabled) {
+      const r = worlds.resolveEnable(infos, n, game);
+      for (const x of r.enable) { mt.set('load_mod_' + x, 'true'); if (!pick.includes(x)) pulled.add(x); }
+      missing.push(...r.missing);
+    } else mt.set('load_mod_' + n, 'false');
+  }
+  if (!enabled) { // mods outside the group that need a switched-off mod would break: switch them off too
+    for (const n of pick) for (const d of worlds.dependentsOf(infos, n, (x) => mt.modEnabled(x))) mt.set('load_mod_' + d, 'false');
+  }
   mt.save();
+  return { pulled: [...pulled], missing };
 });
+handle('catAdd', (name) => categories.add(needInstall(), name));
+handle('catRemove', (name) => categories.remove(needInstall(), name));
+handle('catRename', (name, to) => categories.rename(needInstall(), name, to));
+handle('catAssign', (mod, cat) => categories.assign(needInstall(), mod, cat));
+handle('openModsFolder', async () => {
+  const p = path.join(needInstall(), 'mods');
+  fs.mkdirSync(p, { recursive: true });
+  const err = await shell.openPath(p);
+  if (err) throw new Error(err);
+});
+handle('cdbReachable', () => contentdb.reachable(net));
 
 // Folders live in a world (skins, capes) or in the Luanti data folder (shared music mod).
 function baseFor(f, worldPath) {
@@ -140,12 +172,6 @@ handle('openFolder', async (worldPath, id) => {
   if (err) throw new Error(err);
 });
 
-handle('sync', () => {
-  const st = state();
-  if (!st.install) throw new Error('No Luanti install found (Settings).');
-  return sync.syncMods(st.install.dataDir, { ...st.cfg, modsSource: st.modsSource.path });
-});
-
 // ---- updates (our GitHub repo) and ContentDB: network only when the user presses a button ----
 const cacheDir = () => path.join(dataDir, 'cache');
 const needInstall = () => { const st = state(); if (!st.install) throw new Error('No Luanti install found (Settings).'); return st.install.dataDir; };
@@ -175,7 +201,16 @@ handle('cdbInstall', (pkg, force) => contentdb.install(net, needInstall(), pkg, 
 handle('createWorld', (opts) => {
   const st = state();
   if (!st.install) throw new Error('No Luanti install found (Settings).');
-  const mods = opts.mods === 'all' ? listMods(st.install.dataDir) : [];
+  // No mods by default; a chosen category switches on its mods plus what they need.
+  let mods = [];
+  if (opts.category) {
+    const infos = worlds.listModsInfo(st.install.dataDir);
+    const of = categories.overview(st.install.dataDir, infos.map((m) => m.name)).of;
+    const game = worlds.gameModNames(st.install.dataDir, opts.gameid);
+    const on = new Set();
+    for (const m of infos) if (of[m.name] === opts.category) for (const x of worlds.resolveEnable(infos, m.name, game).enable) on.add(x);
+    mods = [...on];
+  }
   return worlds.createWorld(st.install.dataDir, { name: opts.name, gameid: opts.gameid, creative: !!opts.creative, flat: !!opts.flat, mods });
 });
 handle('deleteWorld', (worldPath) => {
@@ -228,7 +263,7 @@ async function shots(dir) {
   fs.mkdirSync(dir, { recursive: true });
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await wait(1200);
-  for (const tab of ['play', 'mods', 'updates', 'contentdb', 'folders', 'sync', 'settings']) {
+  for (const tab of ['play', 'mods', 'updates', 'contentdb', 'folders', 'settings']) {
     await win.webContents.executeJavaScript(`document.querySelector('[data-tab="${tab}"]').click()`);
     await wait(700);
     fs.writeFileSync(path.join(dir, tab + '.png'), (await win.webContents.capturePage()).toPNG());

@@ -6,6 +6,7 @@ dofile(modpath .. "/settings.lua")
 dofile(modpath .. "/people.lua")
 dofile(modpath .. "/combat.lua")
 dofile(modpath .. "/zombie.lua")
+dofile(modpath .. "/spacing.lua")
 if core.get_modpath("hq") then
 	hq.register_shortcut({ id = "populations", name = "Populations", command = "pop", icon = "mcl_core:emerald", short = "PO" })
 end

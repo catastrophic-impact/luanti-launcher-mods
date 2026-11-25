@@ -8,6 +8,7 @@ under the GNU General Public License, version 3 or (at your option) any later ve
 - **Wave Matrix music** (`mods/wavematrix/music/`): all rights reserved. Bundled only for use with this
   project's Wave Matrix mod. See `mods/wavematrix/music/LICENSE`.
 - **Mineclonia-derived texture** (`mods/luanti_fixes/textures/`): CC BY-SA 4.0, see `LICENSE.txt` there.
+- **Villager skins** (`mods/populations/textures/`): generated from Mineclonia's mcl_skins layers (MrRar; "Pixel Perfection" by XSSheep), CC BY-SA 4.0, attribution in `LICENSE.txt` there.
 - **Code from Twinsonian's mods**: `identifiable`, `mobcrate`, `nosleep` and `wavematrix` contain code from
   Twinsonian's MIT-licensed Luanti mods. Their original `LICENSE` files stay in each mod folder. Our changes
   on top of that code are GPL-3.0-or-later.

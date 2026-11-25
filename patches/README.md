@@ -26,6 +26,8 @@ Each patch file starts with a comment-free diff; describe WHY in the list below.
     lt sync                 # a failing patch is named; fix it with lt patchwork (apply the others, redo the failed change), delete the old one, lt mkpatch again
 When all patches apply and tests pass, `BASE.txt` is refreshed by the next `lt mkpatch` (or write the new HEAD by hand).
 
+The complete list of everything our mods wrap, override or depend on in Mineclonia (and what to re-check after an upstream update) is **MINECLONIA_CHANGES.md** in this folder: keep it current.
+
 ## Patch list (why each exists)
 (none yet)
 
