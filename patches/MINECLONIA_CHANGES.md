@@ -10,7 +10,8 @@ Kinds: **wrap** = we replace a function/method and call the original; **override
 **hook** = we use an official register_* callback; **reads** = we only read its API; **asset** = a file we ship.
 
 ## luanti_fixes
-- asset: `textures/mcl_poplar_poplar_shelf.png`. Upstream references it but does not ship it (red "Could not load image"). Delete ours if upstream ships it. CC BY-SA 4.0 (derived from a Mineclonia texture).
+- wrap: `mcl_core.basic_flood` and every node `on_flood` that equals it (no drops from water flooding young or unattended blocks). Reads `mcl_core.basic_flood`. Details under "Upstream bugs" below.
+- asset: `textures/mcl_poplar_poplar_shelf.png` (the launcher force-enables luanti_fixes in every world at launch, main.js `launch`; new worlds start with no mods, which brought the error back once). Upstream references it but does not ship it (red "Could not load image"). Delete ours if upstream ships it. CC BY-SA 4.0 (derived from a Mineclonia texture).
 - hook: `core.register_on_newplayer` sets meta `mcl_skins:skin` to `mcl_skins.steve` so new players start as the boy (upstream picks steve/alex at random in its own on_joinplayer).
   Reads `mcl_skins.steve`. Breaks if mcl_skins renames steve/alex or changes the meta key / skin table shape.
 
@@ -60,10 +61,20 @@ Kinds: **wrap** = we replace a function/method and call the original; **override
 ## uikit
 - wrap (player formspec prepend): after `mcl_formspec_prepend` sets the game's prepend on join (we wait 0.5 s), uikit appends a full-window dark panel `background9` + button/field/label styles via `player:set_formspec_prepend`, so every formspec without `no_prepend[]` (Mineclonia's inventory, other mods) gets our look. Option "Other mods' screens" turns it off. Breaks if mcl_formspec_prepend sets the prepend again later or changes its elements (`gui_nonbg`, `gui_bg_img`).
 
+## Upstream bugs and quirks we work around (the Mineclonia fixes list; keep new ones here, not in DEVNOTES)
+Format: symptom, cause (as far as proven), our fix, where, how to check after an upstream update.
+- **Water destroys generated plants and each drops an item; "Found duplicate GUID ... __builtin:item" (red chat, 2026-11-25).** Symptom: in a freshly generated lush cave ~35 plant items (azalea, big dripleaf, moss carpet, seeds) were stored in one mapblock of the dad_survival world; the engine later activated two of them twice (both GUIDs from the error were in the saved block) and Mineclonia deleted the copies. Cause (measured, tests/lush_probe: 21 000 lush nodes generated around that spot gave 560 item entities and ~1976 `add_item` calls, all from `mcl_core` `basic_flood` -> `drop_attached_node`): `_mcl_autogroup` gives nodes `on_flood = mcl_core.basic_flood`, which drops the node's items when liquid flows in; liquid settling after mapgen floods the plants the generator placed in/next to pools, with nobody around. Fix (wrap): `mods/luanti_fixes/init.lua` replaces `mcl_core.basic_flood` and every node's `on_flood` that pointed to it (at mods loaded): while the mapblock is < 120 s old, or no player is within 48 nodes, a flooding water node removes the plant without a drop. Result in the probe: 560 -> 44 items (the rest are within 48 nodes of the player = normal flooding); no duplicate-GUID line. Check upstream: `grep -n "basic_flood\|on_flood" reference/mineclonia/mods/CORE/_mcl_autogroup/init.lua reference/mineclonia/mods/ITEMS/mcl_core/functions.lua`. Test: `lt test lush_probe` (needs dev.conf with fixed_map_seed = 1174334992900360481 and mg_name = v7 temporarily; add `lush_probe_nofix = true` to compare). Not proven: that the engine double-activation is only triggered by these drops; `register_on_generated` does not seem to fire for Mineclonia's own generator, so the "young" part is only partly effective and the player-distance rule does most of the work.
+- **Red client error "Could not load image mcl_poplar_poplar_shelf.png".** Upstream references a texture it does not ship. Fix (asset): `mods/luanti_fixes/textures/`. See the luanti_fixes section above.
+- **New players get a random skin.** Fix (hook): luanti_fixes `register_on_newplayer` sets the boy skin. See above.
+- **Villagers walk onto each other at the bell; `hp_max` property does not read back.** Workarounds in populations (spacing.lua; `_pop_hp_max`). See the populations section above.
+- **Chicken head folded into the body in a formspec `model[]` preview** (Mineclonia rotates the head bone in the world; a formspec cannot set bones). NOT fixed in Tameful's window; options are a 2D picture or a preview mesh with an upright head.
+- Formspec quirk (engine, found while theming Mineclonia screens): closing one formspec and opening another in the same tick loses the second; close, then show 0.1 s later (HQ).
+
 ## Quick check after an upstream update
     grep -rn "poplar_shelf" reference/mineclonia/mods                     # luanti_fixes asset still needed?
     grep -n "steve\|alex" reference/mineclonia/mods/PLAYER/mcl_skins/edit_skin.lua | head
     grep -n "function villager:\(schedule\|do_navigate\|socialize_at_bell\|gossip_and_trade\)" reference/mineclonia/mods/ENTITIES/mobs_mc/villager.lua
     grep -n "mob_class:\(replace_with\|is_valid_target\|driver_detached\|apply_driver_input\)" -r reference/mineclonia/mods/ENTITIES/mcl_mobs
     grep -n "function mcl_beds.on_rightclick\|mcl_beds.get_bed_top" -r reference/mineclonia/mods/ITEMS
+    lt test lush_probe                               # luanti_fixes flood guard (see the note in the Upstream bugs entry)
     lt test populations_test --no-restart ; lt test tameful_test --no-restart ; lt test hq_test --no-restart   # one at a time

@@ -237,6 +237,12 @@ handle('launch', (worldPath, creative) => {
     // Creative is chosen at every start (Play tab checkbox) and written into the world before Luanti reads it.
     if (typeof creative === 'boolean') { const mt = WorldMT.read(w.path); mt.set('creative_mode', creative ? 'true' : 'false'); mt.save(); }
     if (st.install.dataDir) worlds.applyWorldSettings(st.install.dataDir, w.path);
+    // luanti_fixes ships textures upstream Mineclonia lacks (red "Could not load image" errors): always on when installed,
+    // because new worlds start with no mods. Never switch this off or drop it from here.
+    if (st.install.dataDir && fs.existsSync(path.join(st.install.dataDir, 'mods', 'luanti_fixes', 'mod.conf'))) {
+      const mt = WorldMT.read(w.path);
+      if (!mt.modEnabled('luanti_fixes')) { mt.set('load_mod_luanti_fixes', 'true'); mt.save(); }
+    }
     args.push('--go', '--world', w.path);
     const gid = WorldMT.read(w.path).get('gameid');
     if (gid) args.push('--gameid', gid);
