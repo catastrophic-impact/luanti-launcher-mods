@@ -217,9 +217,10 @@ cmd_shots() {
         tries=0
         while [ $tries -lt 4 ]; do
           focus_game
-          spectacle -b -n -a -o "$TMP/shots/$n.png" >/dev/null 2>&1
-          w=$(python3 -I -c "import struct,sys;d=open(sys.argv[1],'rb').read(32);print(struct.unpack('>I',d[16:20])[0])" "$TMP/shots/$n.png" 2>/dev/null)
-          [ -n "$w" ] && break
+          # active-window mode (-a) can abort in spectacle: after 2 failed tries fall back to a fullscreen grab (the game window was just raised)
+          if [ $tries -lt 2 ]; then spectacle -b -n -a -o "$TMP/shots/$n.png" >/dev/null 2>&1; else spectacle -b -n -f -o "$TMP/shots/$n.png" >/dev/null 2>&1; fi
+          # spectacle sometimes aborts mid-write (valid header, no body): a complete PNG ends with an IEND chunk
+          tail -c 12 "$TMP/shots/$n.png" 2>/dev/null | grep -q IEND && break
           tries=$((tries+1)); sleep 1
         done
         done_list="$done_list $n";; esac

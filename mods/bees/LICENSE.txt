@@ -1,0 +1,5 @@
+models/bees_bee.obj, textures/bees_bee_*.png and sounds/bees_bee.1-7.ogg are the bee model and textures from the "X Farming" mod by SaKeL
+(https://content.luanti.org/packages/SaKeL/x_farming/), renamed only (x_farming_bee.N.ogg -> bees_bee.N.ogg). Media license: CC-BY-SA-4.0
+(http://creativecommons.org/licenses/by-sa/4.0/). Shared under the same license.
+The author states the project is entirely handmade. If that is ever shown to be wrong, replace these four files (they are referenced in one place, init.lua).
+bees_bee_features_angry.png is our recolour (red eyes) of bees_bee_features.png, made by tools/make_bee_angry_eyes.py; same license.

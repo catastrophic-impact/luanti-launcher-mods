@@ -1,4 +1,4 @@
--- Small fixes for upstream Mineclonia behaviour that need no game patch. (Also ships textures upstream is missing.)
+-- Small fixes for upstream Mineclonia behaviour that need no game patch.
 
 -- New players always start as the boy (Mineclonia picks the boy or the girl at random). Players who already have a saved skin keep it.
 if core.get_modpath("mcl_skins") then

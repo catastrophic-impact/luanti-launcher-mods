@@ -2,7 +2,7 @@
 
 Keep this file up to date: whenever a mod wraps, replaces or relies on a Mineclonia function, field or file, add or edit its line here (same commit).
 Mineclonia updates often. After `git -C reference/mineclonia pull` + `lt sync`, walk this list: for each line, check that the named thing still exists and still behaves as described,
-then run that mod's test (`lt test <mod>_test`). Last reviewed against upstream commit: see `patches/BASE.txt` (0.124.1).
+then run that mod's test (`lt test <mod>_test`). Last reviewed against upstream commit: see `patches/BASE.txt` (upstream 15575d0, 2026-11-26).
 
 We do NOT fork Mineclonia. There are no patch files today (`patches/mineclonia/` is empty). Everything below lives in our own mods and runs on top of stock Mineclonia.
 
@@ -11,7 +11,7 @@ Kinds: **wrap** = we replace a function/method and call the original; **override
 
 ## luanti_fixes
 - wrap: `mcl_core.basic_flood` and every node `on_flood` that equals it (no drops from water flooding young or unattended blocks). Reads `mcl_core.basic_flood`. Details under "Upstream bugs" below.
-- asset: `textures/mcl_poplar_poplar_shelf.png` (the launcher force-enables luanti_fixes in every world at launch, main.js `launch`; new worlds start with no mods, which brought the error back once). Upstream references it but does not ship it (red "Could not load image"). Delete ours if upstream ships it. CC BY-SA 4.0 (derived from a Mineclonia texture).
+- (removed 2026-11-26) asset `textures/mcl_poplar_poplar_shelf.png`: upstream ships it since 15575d0.
 - hook: `core.register_on_newplayer` sets meta `mcl_skins:skin` to `mcl_skins.steve` so new players start as the boy (upstream picks steve/alex at random in its own on_joinplayer).
   Reads `mcl_skins.steve`. Breaks if mcl_skins renames steve/alex or changes the meta key / skin table shape.
 
@@ -61,17 +61,26 @@ Kinds: **wrap** = we replace a function/method and call the original; **override
 ## uikit
 - wrap (player formspec prepend): after `mcl_formspec_prepend` sets the game's prepend on join (we wait 0.5 s), uikit appends a full-window dark panel `background9` + button/field/label styles via `player:set_formspec_prepend`, so every formspec without `no_prepend[]` (Mineclonia's inventory, other mods) gets our look. Option "Other mods' screens" turns it off. Breaks if mcl_formspec_prepend sets the prepend again later or changes its elements (`gui_nonbg`, `gui_bg_img`).
 
+## bees (step 1 mob, 2a hive counts, 2b homing, 2c angry bees / breaking / harvesting)
+- reads: `mcl_mobs.register_mob` / `register_egg`, `mcl_mobs.mob_class` (`check_frightened`, `check_pace`), airborne mob fields (as in mobs_mc parrot). Later steps will read `mcl_beehives` (node names `beehive[_N]`, `bee_nest[_N]`, group `honey_level`) and `mcl_honey`, and will wrap `mcl_beehives` `dig_hive`/`honey_harvest` (bees on harvest, silk-touch carrying the count).
+- reads (hive.lua): `mcl_beehives` node groups `beehive` (player-placed, starts empty) and `bee_nest` (natural, starts with 1-3 bees); both have levels 0-5 as separate node names (`mcl_beehives:beehive[_N]`, `bee_nest[_N]`), which the honey ABM swaps with `mcl_redstone.swap_node`. We store the bee count in node meta `bees:count` (+ `bees:init`); a node swap must keep meta (tested). Uses an LBM on `group:beehive`/`group:bee_nest` to set the start population, so trees that grow a nest (`mcl_trees.sapling_add_bee_nest`) and mapgen nests are covered. Breaks if upstream renames the groups or starts storing its own bee data.
+- reads (brain.lua, 2b): `mob_class` navigation: `gopath` (false = no route), `go_to_stupidly`, `navigation_finished`, `is_navigating`, `cancel_navigation`, `check_timer`, and the AI-activity convention (an `ai_functions` entry returns an activity name; the field of that name holds its state, `run_ai_1`/`run_ai` in movement.lua). `mcl_weather.get_weather()` ("none" = fair) and `core.get_timeofday()` for the active hours (same 6000-18000 window as mcl_beehives' honey ABM). Bee state fields (`_hive`, `_out_since`, `_forage_for`, `_crumbs`, `heading_home`, `_avoid`) rely on mcl_mobs saving non-function fields. Tame check = `self.tamed` (set by mcl_mobs / tameful).
+- override (hive.lua, 2c): `after_dig_node` of every node in group `beehive` / `bee_nest` is REPLACED by `bees.dig_hive` (upstream `dig_hive` in mcl_beehives/init.lua dealt a flat 10 \"sting\" damage and had a TODO for real bees). We keep its drops (beehive -> beehive item; nest -> nothing; silk touch -> the node, now with item meta `bees:count`; creative -> item to inventory) and release the bees angry instead. Breaks if upstream changes those drops or the nodes' groups.
+- wrap (hive.lua, 2c): `on_rightclick` (`honey_harvest`) of the level-5 hive nodes. While it runs, `mcl_util.deal_damage` is swapped for a version that swallows reason type `sting` (upstream's flat 10 damage when no lit campfire is within 5 nodes below); if it fired, all bees come out angry. Restored in a pcall. Breaks if upstream stops using `deal_damage(..., {type = \"sting\"})` there or starts handling bees itself.
+- wrap (anger.lua): `mob_class.receive_damage` for the bee only (hurt by a player -> the bee and bees within 16 nodes get angry). Reads `mcl_util.deal_damage`, `mcl_potions.give_effect_by_level(\"poison\", ...)`, `mcl_damage.finish_reason`, `mcl_enchanting.has_enchantment`, `awards.unlock(\"mcl:total_beelocation\")`, group `lit_campfire`.
+- field: bees set `can_despawn = false` and `persistent = true` (mcl_mobs `despawn_allowed` in spawning.lua) so a beekeeper's bees never despawn.
+- asset: bee model and textures from SaKeL's X Farming (CC BY-SA 4.0).
+
 ## Upstream bugs and quirks we work around (the Mineclonia fixes list; keep new ones here, not in DEVNOTES)
 Format: symptom, cause (as far as proven), our fix, where, how to check after an upstream update.
 - **Water destroys generated plants and each drops an item; "Found duplicate GUID ... __builtin:item" (red chat, 2026-11-25).** Symptom: in a freshly generated lush cave ~35 plant items (azalea, big dripleaf, moss carpet, seeds) were stored in one mapblock of the dad_survival world; the engine later activated two of them twice (both GUIDs from the error were in the saved block) and Mineclonia deleted the copies. Cause (measured, tests/lush_probe: 21 000 lush nodes generated around that spot gave 560 item entities and ~1976 `add_item` calls, all from `mcl_core` `basic_flood` -> `drop_attached_node`): `_mcl_autogroup` gives nodes `on_flood = mcl_core.basic_flood`, which drops the node's items when liquid flows in; liquid settling after mapgen floods the plants the generator placed in/next to pools, with nobody around. Fix (wrap): `mods/luanti_fixes/init.lua` replaces `mcl_core.basic_flood` and every node's `on_flood` that pointed to it (at mods loaded): while the mapblock is < 120 s old, or no player is within 48 nodes, a flooding water node removes the plant without a drop. Result in the probe: 560 -> 44 items (the rest are within 48 nodes of the player = normal flooding); no duplicate-GUID line. Check upstream: `grep -n "basic_flood\|on_flood" reference/mineclonia/mods/CORE/_mcl_autogroup/init.lua reference/mineclonia/mods/ITEMS/mcl_core/functions.lua`. Test: `lt test lush_probe` (needs dev.conf with fixed_map_seed = 1174334992900360481 and mg_name = v7 temporarily; add `lush_probe_nofix = true` to compare). Not proven: that the engine double-activation is only triggered by these drops; `register_on_generated` does not seem to fire for Mineclonia's own generator, so the "young" part is only partly effective and the player-distance rule does most of the work.
-- **Red client error "Could not load image mcl_poplar_poplar_shelf.png".** Upstream references a texture it does not ship. Fix (asset): `mods/luanti_fixes/textures/`. See the luanti_fixes section above.
+- **Red client error "Could not load image mcl_poplar_poplar_shelf.png".** Fixed upstream in 15575d0; our texture was removed.
 - **New players get a random skin.** Fix (hook): luanti_fixes `register_on_newplayer` sets the boy skin. See above.
 - **Villagers walk onto each other at the bell; `hp_max` property does not read back.** Workarounds in populations (spacing.lua; `_pop_hp_max`). See the populations section above.
 - **Chicken head folded into the body in a formspec `model[]` preview** (Mineclonia rotates the head bone in the world; a formspec cannot set bones). NOT fixed in Tameful's window; options are a 2D picture or a preview mesh with an upright head.
 - Formspec quirk (engine, found while theming Mineclonia screens): closing one formspec and opening another in the same tick loses the second; close, then show 0.1 s later (HQ).
 
 ## Quick check after an upstream update
-    grep -rn "poplar_shelf" reference/mineclonia/mods                     # luanti_fixes asset still needed?
     grep -n "steve\|alex" reference/mineclonia/mods/PLAYER/mcl_skins/edit_skin.lua | head
     grep -n "function villager:\(schedule\|do_navigate\|socialize_at_bell\|gossip_and_trade\)" reference/mineclonia/mods/ENTITIES/mobs_mc/villager.lua
     grep -n "mob_class:\(replace_with\|is_valid_target\|driver_detached\|apply_driver_input\)" -r reference/mineclonia/mods/ENTITIES/mcl_mobs
