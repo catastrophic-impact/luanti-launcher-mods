@@ -17,3 +17,4 @@ CHANGES
 - 2026-11-20: Peace and Quiet port (hides advancement popups per player, hidden by default; /peaceandquiet).
 - 2026-11-24: shared UI library mod (uikit): one dark look for every screen, settings window (/uikit) for background, panels, text color and size.
 - 2026-11-24: all mod screens moved to the shared look; settings checkboxes became On/Off buttons; Tameful, Identifiable, Wave Matrix, HQ, Populations, Conflict Resolution, Mob Crate, No Sleep and Peace and Quiet updated.
+- 2026-11-25: launcher: Creative is a checkbox on the Play tab (not at world creation) and is applied at launch; removed the global Enable all / Disable all on the Mods tab.

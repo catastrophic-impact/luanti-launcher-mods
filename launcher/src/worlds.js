@@ -11,7 +11,12 @@ function listWorlds(dataDir) {
   return names
     .filter((n) => exists(path.join(root, n, 'world.mt')))
     .sort((a, b) => a.localeCompare(b))
-    .map((n) => ({ name: n, path: path.join(root, n) }));
+    .map((n) => {
+      const p = path.join(root, n);
+      let creative = false;
+      try { creative = WorldMT.read(p).get('creative_mode') === 'true'; } catch { /* unreadable */ }
+      return { name: n, path: p, creative };
+    });
 }
 
 // world.mt is kept line by line: only load_mod_* lines are ever changed.
@@ -198,4 +203,20 @@ function deleteWorld(dataDir, worldPath) {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
-module.exports = { listWorlds, WorldMT, listMods, isMod, exists, parseModConf, listModsInfo, gameModNames, resolveEnable, dependentsOf, listGames, createWorld, deleteWorld };
+// What Luanti's main menu does before it starts a world: copy the world's creative_mode and enable_damage into the global
+// settings (minetest.conf). Starting with --go skips the menu, so without this the global values (e.g. creative_mode = true) win.
+function applyWorldSettings(dataDir, worldPath) {
+  const mt = WorldMT.read(worldPath);
+  const file = path.join(dataDir, 'minetest.conf');
+  let lines = [];
+  try { lines = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter((l, i, a) => !(i === a.length - 1 && l === '')); } catch { /* new file */ }
+  const conf = new WorldMT(file, lines);
+  let changed = false;
+  for (const k of ['creative_mode', 'enable_damage']) {
+    const v = mt.get(k);
+    if (v !== undefined && conf.get(k) !== v) { conf.set(k, v); changed = true; }
+  }
+  if (changed) conf.save();
+}
+
+module.exports = { applyWorldSettings, listWorlds, WorldMT, listMods, isMod, exists, parseModConf, listModsInfo, gameModNames, resolveEnable, dependentsOf, listGames, createWorld, deleteWorld };

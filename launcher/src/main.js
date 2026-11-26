@@ -228,12 +228,15 @@ handle('saveSettings', (cfg) => {
 });
 
 // Launch Luanti detached (it keeps running if the launcher closes).
-handle('launch', (worldPath) => {
+handle('launch', (worldPath, creative) => {
   const st = state();
   if (!st.install) throw new Error('No Luanti install found (Settings).');
   const args = [...st.install.cmd.slice(1)];
   if (worldPath) {
     const w = worldByPath(worldPath);
+    // Creative is chosen at every start (Play tab checkbox) and written into the world before Luanti reads it.
+    if (typeof creative === 'boolean') { const mt = WorldMT.read(w.path); mt.set('creative_mode', creative ? 'true' : 'false'); mt.save(); }
+    if (st.install.dataDir) worlds.applyWorldSettings(st.install.dataDir, w.path);
     args.push('--go', '--world', w.path);
     const gid = WorldMT.read(w.path).get('gameid');
     if (gid) args.push('--gameid', gid);

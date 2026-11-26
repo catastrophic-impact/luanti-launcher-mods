@@ -47,24 +47,28 @@ function worldSelect(onchange) {
 async function renderPlay() {
   const st = S.st;
   const list = h('div', { class: 'list' });
+  const cb = h('input', { type: 'checkbox' }); // creative for this start (remembered per world in its world.mt)
   for (const w of st.worlds) {
-    list.append(h('div', { class: 'world' + (w.path === S.world ? ' sel' : ''), ondblclick: () => launch(w.path), onclick: () => { S.world = w.path; renderPlay(); } },
+    list.append(h('div', { class: 'world' + (w.path === S.world ? ' sel' : ''), ondblclick: () => launch(w.path, w.path === S.world ? cb.checked : w.creative), onclick: () => { S.world = w.path; renderPlay(); } },
       h('div', { class: 'ic' }), h('div', {}, h('div', { class: 't' }, w.name), h('div', { class: 'd' }, w.path))));
   }
   const cur = st.worlds.find((w) => w.path === S.world);
+  cb.checked = !!(cur && cur.creative);
+  cb.disabled = !cur;
   view.replaceChildren(
     h('h2', {}, 'Your worlds'),
     h('p', { class: 'sub' }, 'Pick a world and press Play. Double-click a world to start it right away.'),
     st.worlds.length ? list : h('div', { class: 'empty' }, st.install ? 'No worlds yet. Press "New world" to create one.' : 'Luanti was not found. Open Settings to point the launcher at it.'),
     h('div', { class: 'row' },
-      h('button', { class: 'btn primary big', disabled: !cur, onclick: () => launch(cur.path) }, cur ? `▶  PLAY  ${cur.name}` : '▶  PLAY'),
+      h('button', { class: 'btn primary big', disabled: !cur, onclick: () => launch(cur.path, cb.checked) }, cur ? `▶  PLAY  ${cur.name}` : '▶  PLAY'),
+      h('label', { class: 'check' }, cb, ' Creative mode'),
       h('button', { class: 'btn', disabled: !st.install, onclick: () => launch(null) }, 'Open Luanti menu'),
       h('span', { class: 'spacer' }),
       h('button', { class: 'btn', disabled: !st.install || !st.games.length, onclick: newWorldDialog }, '＋ New world'),
       h('button', { class: 'btn danger', disabled: !cur, onclick: () => deleteWorldDialog(cur) }, 'Delete world')));
 }
-async function launch(worldPath) {
-  await run(() => api.launch(worldPath), 'Luanti is starting...');
+async function launch(worldPath, creative) {
+  await run(() => api.launch(worldPath, creative),'Luanti is starting...');
 }
 
 // ---- dialogs ----------------------------------------------------------------------------------
@@ -84,18 +88,16 @@ function newWorldDialog() {
   const name = h('input', { type: 'text', placeholder: 'My world', maxlength: '64' });
   const game = h('select', {}, st.games.map((g) => h('option', { value: g.id }, g.title)));
   const type = h('select', {}, h('option', { value: 'default' }, 'Default'), h('option', { value: 'flat' }, 'Flat (for testing and building)'));
-  const creative = h('input', { type: 'checkbox' });
   const cat = h('select', {}, h('option', { value: '' }, 'No mods (add them later in the Mods tab)'), st.cats.map((c) => h('option', { value: c }, `Everything in "${c}"`)));
   const field = (label, el) => h('div', { class: 'field' }, h('label', {}, label), el);
   const check = (el, text) => h('label', { class: 'check' }, el, ' ', text);
   const m = modal('New world', h('div', {},
     field('Name', name), field('Game', game), field('World type', type),
-    h('div', { class: 'field' }, check(creative, 'Creative mode')),
     field('Start with mods', cat)),
   (close) => [
     h('button', { class: 'btn', onclick: close }, 'Cancel'),
     h('button', { class: 'btn primary', onclick: async () => {
-      const r = await run(() => api.createWorld({ name: name.value, gameid: game.value, flat: type.value === 'flat', creative: creative.checked, category: cat.value }), (w) => `Created "${w.name}"`);
+      const r = await run(() => api.createWorld({ name: name.value, gameid: game.value, flat: type.value === 'flat', category: cat.value }), (w) => `Created "${w.name}"`);
       if (r) { close(); await refresh(); S.world = r.path; renderPlay(); }
     } }, 'Create')]);
   name.focus();
@@ -186,8 +188,7 @@ async function renderMods() {
     h('div', { class: 'row', style: 'margin-bottom:6px' },
       h('button', { class: 'btn small', onclick: () => newCatDialog(reload) }, '＋ New category'),
       h('button', { class: 'btn small', onclick: () => run(() => api.openModsFolder()) }, 'Open mods folder'),
-      h('span', { class: 'spacer' }),
-      h('button', { class: 'btn small', onclick: setAll(false) }, 'Disable all'), h('button', { class: 'btn small', onclick: setAll(true) }, 'Enable all')),
+      h('span', { class: 'spacer' })),
     mods.length ? body : h('div', { class: 'empty', style: 'margin-top:14px' }, 'No mods installed yet. Install ours in the Updates tab, or open the mods folder to add your own.'));
 }
 

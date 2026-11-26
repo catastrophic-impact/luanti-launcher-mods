@@ -26,7 +26,7 @@ One plain-text wiki page per mod (features, commands, settings) is in `wiki/`.
 
 ### Launcher (`launcher/`)
 The Luanti Launcher (Electron), portable: settings live in a `launcher-data` folder next to the program, never in your home folder.
-- **Play**: start Luanti or a world; create (Default or Flat) and delete worlds. New worlds start with no mods on; you can start from one of your categories.
+- **Play**: start Luanti or a world; create (Default or Flat) and delete worlds. New worlds start with no mods on; you can start from one of your categories. A Creative mode checkbox next to Play is chosen at every start (saved in the world, and copied into Luanti's settings the way its own menu does, so it really takes effect).
 - **Mods**: shows what is switched on for the selected world. Mods are grouped into categories (ours go into a built-in group, others into "Other"; make your own such as "Survival"). Each category has Enable all / Disable all. Switching a mod on also switches on what it needs. "Open mods folder" opens the folder where mods live.
 - **Updates**: installs and updates our mods from this repository. Mods you changed yourself are never overwritten without asking.
 - **ContentDB**: search, install, update and remove packages from content.luanti.org. The tab only appears if ContentDB answers a single small request at start. An always-on content filter hides and blocks packages with sexual or gender-ideology themes (the word list is in `launcher/src/filter.js`); there is no setting to turn it off.

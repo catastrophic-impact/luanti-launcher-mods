@@ -148,3 +148,15 @@ test('categories: built-in groups, assign, rename, delete', () => {
   categories.remove(data, 'Hard');
   assert.strictEqual(categories.overview(data, ['theirs']).of.theirs, categories.OTHER);
 });
+
+test('starting a world copies its creative_mode and enable_damage into minetest.conf (the menu is skipped)', () => {
+  const data = tmp();
+  fs.mkdirSync(path.join(data, 'games', 'mineclonia'), { recursive: true });
+  fs.writeFileSync(path.join(data, 'games', 'mineclonia', 'game.conf'), 'title = Mineclonia\n');
+  const w = require('../src/worlds');
+  const r = w.createWorld(data, { name: 'Beta', gameid: 'mineclonia' });
+  fs.writeFileSync(path.join(data, 'minetest.conf'), 'enable_damage = false\ncreative_mode = true\nname = tester\n');
+  w.applyWorldSettings(data, r.path);
+  const conf = fs.readFileSync(path.join(data, 'minetest.conf'), 'utf8');
+  assert.match(conf, /^creative_mode = false$/m); assert.match(conf, /^enable_damage = true$/m); assert.match(conf, /^name = tester$/m);
+});
