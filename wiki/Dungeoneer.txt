@@ -1,0 +1,159 @@
+================================================================
+DUNGEONEER
+================================================================
+Version:        1.0.0
+Requires:       Mineclonia, multiversatile (included), uikit (included)
+Install on:     Server (works in single player too)
+Mod ID:         dungeoneer
+
+Random dungeons that are built when you ask for one, in a dimension of their own.
+Every run is different, every monster is placed by hand (nothing spawns on its own),
+and a boss waits at the far end. A dungeon is taken away again when nobody has been
+inside for a while. You enter through a small portal that you light with a key
+(operators can also use a command).
+
+----------------------------------------------------------------
+FEATURES
+----------------------------------------------------------------
+Dungeons
+- A castle dungeon: a grid of 6 x 5 rooms joined by corridors (every room can be
+  reached), a start room on the west side and the boss room at the far east end.
+  Rooms differ in size and every run has a different layout.
+- Each run lives in its own area of the Dungeon dimension. Up to 10 dungeons can
+  exist at once; when one is removed its area is cleaned completely and used again.
+- Dark and closed in: no sky, no sun, no moon, no stars, no clouds, no weather.
+- Tiers 1 to 4: higher tiers mean tougher monsters (they take less damage) and a
+  tougher boss.
+
+The portal and keys
+- Dungeon Portal Frame (craft 8: stone bricks in the four corners and obsidian in the four edges of the crafting grid, centre empty;
+  mined with a diamond pickaxe). Build a 4x4 ring of them standing up, in either
+  direction, around a 2x2 opening; the four corners are not needed.
+- Dungeon Keys, one per tier. They cannot be crafted:
+  - Tier I drops (1%) from any hostile mob that a player kills, in any dimension. Mobs
+    inside dungeons never drop keys.
+  - Tier II is in the chest of a tier I dungeon, tier III in the chest of a tier II
+    dungeon, tier IV in the chest of a tier III dungeon. A tier IV chest holds no key.
+  - When the boss dies, every player who is inside at that moment (a player who has
+    died but not yet respawned still counts) is owed one key of the next tier. The
+    chest holds one per player; only they can take theirs, and only one each, even if
+    they come back for it later through the portal.
+  - You can carry only one key, of any tier. A mob drop is skipped, a key on the
+    ground stays there and the chest will not give you a key while you carry one.
+  Use a key on the frame: a new dungeon of that tier is built, the opening lights up
+  (teal) and the key is used up (in creative mode too). A key is lost if the run is
+  lost: you start again from a tier I drop.
+- Every lit portal has its own dungeon.
+- Step into the portal and a window asks what to do:
+  - Enter: you arrive at the start of that run. Everyone who enters through the
+    portal goes to the same run.
+  - Reset: removes the dungeon and the portal after one more question (it warns if
+    a chest or grave with items was left inside). Greyed out while anybody is
+    inside. The frame stays: light it again with a key.
+  - Cancel: nothing happens, and it does not ask again until you step out and back in.
+  The window shows the tier, who is inside, how long until an empty dungeon closes,
+  and whether the boss has been defeated.
+- A key used on a lit portal (or its frame) while nobody is inside replaces that
+  dungeon with a new one of the key's tier. With somebody inside it does nothing and
+  you keep the key.
+- The way out: a portal in the start room and another in the boss room. Stepping
+  into one asks Leave or Stay (it shows whether the boss is dead, who else stays
+  inside, and how long the dungeon lasts after you leave). Leave takes you back to
+  just outside the portal you came in by (a block or so away, facing away). Stay
+  does nothing, and it does not ask again until you step out and back in.
+- Log in while standing in the Dungeon dimension (you logged out inside, the server
+  restarted, the dungeon was removed while you were away) and you are put outside:
+  at the place you came in from, or your spawn.
+- No new dungeons from inside a dungeon: a key does nothing in the Dungeon dimension.
+- When an empty dungeon's time runs out its portal goes out (the frame stays) and
+  the dungeon is removed. Break a frame block and the portal closes: anybody inside
+  stays and walks out by the exit portals, and the dungeon is removed as soon as it
+  is empty (at once if nobody is inside).
+
+Unbreakable walls
+- The walls, floor and lanterns are Dungeon Bricks, Dungeon Floor and Dungeon
+  Lantern: unbreakable like bedrock (only creative mode can break them) and immune
+  to explosions and pistons. Anything you place yourself in a dungeon is an
+  ordinary block and can be broken as usual.
+
+Monsters
+- Packs of monsters wait in the rooms (zombies and skeletons; from tier 2 husks and
+  spiders; from tier 3 strays and vindicators; tier 4 adds wither skeletons).
+  Nothing else ever spawns. They never go away for being far from players.
+
+The boss
+- One boss at the end: a zombie twice the normal size, with a random name, a boss
+  bar, lots of health and armor.
+- Abilities grow with the tier: it calls zombie helpers (tier 1, at most 4 alive),
+  makes a telegraphed ground slam, a ring of flames shows where it lands (tier 2),
+  and teleports to players who keep their distance (tier 3). Tier 4 does all of it,
+  faster.
+- It notices anybody within 24 blocks, even through walls.
+- Beating the boss marks the dungeon as cleared.
+
+Loot
+- A chest waits in a corner of the boss room, filled from the dungeon's tier (better
+  loot at higher tiers). It is sealed until the boss is dead: it will not open and
+  cannot be broken. Beating the boss tells you the chest has unsealed.
+
+No friendly fire
+- Dungeon monsters never hurt each other (arrows, bites, summoned helpers). They
+  still hurt you, your pets and anything else, and you can hurt them.
+
+Resets
+- A dungeon is removed after 10 minutes with nobody inside (a setting). Everything in
+  it is removed: blocks, monsters, and whatever you left behind, and its portal
+  goes out.
+- Optional: remove it as soon as it is empty after a player died in it.
+- A chest, grave or other block with items left in a dungeon keeps it alive a
+  while longer (60 minutes extra by default).
+- Monsters left behind in saved map blocks of a removed dungeon are removed when
+  they load.
+
+----------------------------------------------------------------
+COMMANDS (operators)
+----------------------------------------------------------------
+/dungeon spawn castle <1-4>    build a new dungeon of that tier and enter it
+/dungeon list                  the dungeons that exist
+/dungeon leave                 go back to where you came from
+/dungeon reset <id>            take a dungeon away (refused while somebody is inside)
+/dungeon setting reset_minutes <1-1440>
+/dungeon setting reset_on_death <true|false>
+/dungeon setting grave_grace_minutes <0-10080>
+/dungeon settings              open the settings screen
+
+----------------------------------------------------------------
+SETTINGS
+----------------------------------------------------------------
+Per world, kept in the mod storage of the world. Open the screen with
+/dungeon settings, or with the Dungeoneer button in HQ (only operators, and the owner
+of a single-player world, can change them):
+
+reset_minutes         10     How long an empty dungeon lives.
+reset_on_death        off    Remove it as soon as it is empty after a player died.
+grave_grace_minutes   60     Extra time for a dungeon that still holds a chest or grave.
+
+----------------------------------------------------------------
+HQ COMPATIBILITY
+----------------------------------------------------------------
+With HQ installed, a "Dungeoneer" button in the HQ list opens the settings screen.
+Without HQ the mod works exactly the same.
+
+----------------------------------------------------------------
+COMPATIBILITY & NOTES
+----------------------------------------------------------------
+- Players who join a dungeon don't need anything but the mod.
+- Peaceful difficulty removes hostile monsters, including the dungeon's.
+- Keys do nothing inside the dungeon dimension (no portals inside portals).
+- The dungeon is a band of heights in the one Luanti map, below the Overworld
+  (see Multiversatile); it is not a separate world file.
+- Dungeon monsters are Mineclonia's own mobs.
+
+----------------------------------------------------------------
+CHANGELOG
+----------------------------------------------------------------
+1.0.0
+- First version: castle dungeon, portal frame and four keys (tier I drops from mobs, the others come from the boss chests), Enter/Reset/Cancel
+  window, exit portals with Leave/Stay, unbreakable dungeon blocks, monster packs,
+  the boss with tier abilities, sealed loot chest, empty-time / death / grave
+  resets, /dungeon commands, settings screen and HQ shortcut.

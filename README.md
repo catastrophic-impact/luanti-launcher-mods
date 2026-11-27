@@ -20,6 +20,8 @@ Each folder is one mod with its own `mod.conf` and a `version` line. `uikit` is 
 | `conflictresolution` | PvP on/off and protection for tamed animals. |
 | `peaceandquiet` | Hides advancement popups. |
 | `wavematrix` | Your own music player: bundled tracks plus your own `.ogg` files, with a progress bar that also fills during the pause between songs. |
+| `multiversatile` | Dimensions for Mineclonia: its Overworld, Nether and End plus new ones as bands of heights in the one map, with Minecraft-style height limits (no building past the top, death far out of bounds), per-player sky and light, travel with return points, and reusable areas for throwaway worlds. A library for other mods. |
+| `dungeoneer` | Random castle dungeons built on demand in their own dimension: a portal and keys (tiers I-IV), monsters placed by hand, a boss with abilities, a sealed loot chest, and automatic clean-up. |
 | `luanti_fixes` | Small fixes for upstream Mineclonia problems: a missing texture, and new players always start as the boy character. |
 
 One plain-text wiki page per mod (features, commands, settings) is in `wiki/`.

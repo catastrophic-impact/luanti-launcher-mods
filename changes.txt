@@ -18,3 +18,5 @@ CHANGES
 - 2026-11-24: shared UI library mod (uikit): one dark look for every screen, settings window (/uikit) for background, panels, text color and size.
 - 2026-11-24: all mod screens moved to the shared look; settings checkboxes became On/Off buttons; Tameful, Identifiable, Wave Matrix, HQ, Populations, Conflict Resolution, Mob Crate, No Sleep and Peace and Quiet updated.
 - 2026-11-25: launcher: Creative is a checkbox on the Play tab (not at world creation) and is applied at launch; removed the global Enable all / Disable all on the Mods tab.
+- 2026-11-27: Multiversatile (new): dimensions for Mineclonia as bands of heights in one map; Minecraft-style build limits and out-of-bounds death, per-player sky/light, travel with return points, reusable cleaned areas for throwaway worlds.
+- 2026-11-27: Dungeoneer (new): random castle dungeons in their own dimension; portal frame + keys (tier I drops from hostile mobs, higher keys from boss chests), enter/reset/leave windows, monsters placed by hand, boss with tier abilities and boss bar, sealed loot chest, empty-time / death / grave resets, /dungeon commands, settings screen and HQ button.
